@@ -1,3 +1,5 @@
+// XMAS Light Driver for Ardino Mega
+
 #define DEBUGMODE 0
 
 // Pin defines
