@@ -65,6 +65,7 @@
 
 #define LETTER_MAX  14
 #define COLOUR_MAX  3
+#define MERRY_MAX 5
 
 const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, R0G, R0B}, {R1R, R1G, R1B}, {Y0R, Y0G, Y0B},
                                         {C0R, C0G, C0B}, {H0R, H0G, H0B}, {R2R, R2G, R2B}, {I0R, I0G, I0B}, {S0R, S0G, S0B},
@@ -73,52 +74,49 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 #define FALSE 0
 #define TRUE  1
 
+#define BUTTON_SHORT 30
+#define BUTTON_LONG  1000
+
+#define SIGN_BASIC        0
+#define SIGN_CRAZY        1
+#define SIGN_CHASE        2
+#define SIGN_KNIGHT       3
+#define SIGN_RANDOM_CHARS 4
+#define SIGN_TEST_RED     5
+#define SIGN_TEST_GREEN   6
+#define SIGN_TEST_BLUE    7
+#define SIGN_TEST_WHITE   8
+#define SIGN_MAX          SIGN_TEST_WHITE
+#define SIGN_SELECT       99
+
+#define SELECT_TIME   6    // x500ms
+
+#define PWM_MAX       33   // 33 x .3ms = 10ms pm period
+
 #define RED_MASK     0x01
 #define GREEN_MASK   0x02
 #define BLUE_MASK    0x04
 
-// Scenes - Single states             M  E  R  R  Y  C  H  R  I  S  T  M  A  S
-const int ALL_OFF[LETTER_MAX]     = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-const int SOLID_RED[LETTER_MAX]   = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-const int SOLID_GREEN[LETTER_MAX] = { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 };
-const int SOLID_BLUE[LETTER_MAX]  = { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 };
-
-const int RED_GREEN[LETTER_MAX]   = { 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 };
-const int GREEN_RED[LETTER_MAX]   = { 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1 };
-
-const int CHASE_A1[LETTER_MAX]    = { 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2 };
-const int CHASE_A2[LETTER_MAX]    = { 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4 };
-const int CHASE_A3[LETTER_MAX]    = { 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1 };
-
-const int CHASE_B1[LETTER_MAX]    = { 1, 3, 2, 6, 4, 5, 1, 3, 2, 6, 4, 5, 1, 3 };
-const int CHASE_B2[LETTER_MAX]    = { 3, 2, 6, 4, 5, 1, 3, 2, 6, 4, 5, 1, 3, 2 };
-const int CHASE_B3[LETTER_MAX]    = { 2, 6, 4, 5, 1, 3, 2, 6, 4, 5, 1, 3, 2, 6 };
-const int CHASE_B4[LETTER_MAX]    = { 6, 4, 5, 1, 3, 2, 6, 4, 5, 1, 3, 2, 6, 4 };
-const int CHASE_B5[LETTER_MAX]    = { 4, 5, 1, 3, 2, 6, 4, 5, 1, 3, 2, 6, 4, 5 };
-const int CHASE_B6[LETTER_MAX]    = { 5, 1, 3, 2, 6, 4, 5, 1, 3, 2, 6, 4, 5, 1 };
-
-const int END_SEQUENCE[LETTER_MAX] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-struct sequenceStep
-{
-  const int state[LETTER_MAX];
-  const int delay;
-};
-
-const sequenceStep ALT_RED_GREEN[] = { { SOLID_RED[LETTER_MAX],    300 },
-                                       { SOLID_GREEN[LETTER_MAX],  300 },
-                                       { END_SEQUENCE[LETTER_MAX],   0 } };
+// Scenes - Single states          M  E  R  R  Y  C  H  R  I  S  T  M  A  S
+const int CHASE[LETTER_MAX]    = { 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2 };
 
 const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I', 'S', 'T', 'M', 'A', 'S'};
 
-int letterData[LETTER_MAX] = { 0 };
+const int KNIGHT_TIME[(LETTER_MAX - 1) * 2] = { 200, 150, 100, 80, 60, 40, 30, 30, 40, 60, 80, 100, 150, 200, 150, 100, 80, 60, 40, 30, 30, 40, 60, 80, 100, 150};
 
+int letterData[LETTER_MAX] = { 0 };
+int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
+int signState = SIGN_BASIC;
+bool signActive = FALSE;
+int brightMax = PWM_MAX;
+int fadeSpeed = brightMax;
+bool instantOn = FALSE;
 
 void setup()
 {
   int index;
   int colour;
-    
+  
   #if DEBUGMODE
     Serial.begin(115200);
   #else
@@ -132,43 +130,63 @@ void setup()
     pinMode(AUX1, OUTPUT);
     pinMode(AUX2, OUTPUT);
     pinMode(AUX3, OUTPUT);
-    digitalWrite(AUX1, LOW);
-    digitalWrite(AUX2, LOW);
-    digitalWrite(AUX3, LOW);
+    digitalWrite(AUX1, HIGH);
+    digitalWrite(AUX2, HIGH);
+    digitalWrite(AUX3, HIGH);
   #endif
 
   pinMode(MODE_BUTTON, INPUT);
-//  attachInterrupt(digitalPinToInterrupt(MODE_BUTTON), button_interrupt, FALLING);
+  randomSeed(analogRead(15));
+
+
+
+
+/*
+  delay(5000);
+  rand = random(50, 100);    
+  Serial.print(rand);
+  delay(2000);
+*/  
+
 }
 
-void button_interrupt()
+void handlePWM()
 {
-
-}
-
-bool readButton()
-{
-  static bool lastState = 0;
-  bool state = digitalRead(MODE_BUTTON);
-
-// Need to add proper debounce
-
-  if(state != lastState)
-  {
-    lastState = state;
-
-    // Check if button is pressed.
-    if(state == 0)
-      return TRUE;
-  }
-  return FALSE;
-}
-
-void updateLetters()
-{
+#if !DEBUGMODE
+  static int pwm = 0;
+  int colour;
   int index;
+  
+  //Process LED PWM continuously, every ~300us
+    pwm++;
+      
+    if(pwm > PWM_MAX)
+      pwm = 0;
+ 
+     for(index = 0; index < LETTER_MAX; index++)
+      for(colour = 0; colour < COLOUR_MAX; colour++)
+        digitalWrite(LETTER_MAP[index][colour], pwmData[index][colour] > pwm);
+#endif
+}
 
-  #if DEBUGMODE
+void handleFade()
+{
+  static int letterMem[LETTER_MAX] = { 0 };
+  static unsigned long fadeTime = millis();
+  int colour = 0;
+  int index;
+  
+#if DEBUGMODE
+  for(index = 0; index < LETTER_MAX; index++)
+  {
+    if(letterData[index] != letterMem[index])
+    {
+      colour++;
+      letterMem[index] = letterData[index];
+    }
+  }
+  if(colour)
+  {
     Serial.print((String)"\033[1;37m>>>  ");
     for(index = 0; index < LETTER_MAX; index++)
     {
@@ -177,13 +195,148 @@ void updateLetters()
         Serial.print("  ");    
     }
     Serial.print((String)"\033[1;37m <<<\033[39D");
-  #else
-    int colour;
+  }
+#else
 
-    for(index = 0; index < LETTER_MAX; index++)
-      for(colour = 0; colour < COLOUR_MAX; colour++)
-        digitalWrite(LETTER_MAP[index][colour], letterData[index] & (1 << colour));
-  #endif
+  //Process LED fade effect
+    if(millis() - fadeTime >= (fadeSpeed / brightMax))
+    {
+      fadeTime = millis();
+      
+      for(index = 0; index < LETTER_MAX; index++)
+        for(colour = 0; colour < COLOUR_MAX; colour++)
+        {
+          // Check if letter-colour is requested on
+          if(letterData[index] & (1 << colour))
+          {
+            // Check if already on
+            if(letterMem[index] & (1 << colour))
+              pwmData[index][colour] = brightMax;
+
+            // Fade up this letter-colour
+            else
+            {
+              if(pwmData[index][colour] < brightMax)
+              {
+                if(instantOn)
+                  pwmData[index][colour] = PWM_MAX;
+                else
+                  pwmData[index][colour]++;
+              }
+              if(pwmData[index][colour] == brightMax)
+                letterMem[index] |= (1 << colour);
+            }
+          }
+          
+          // This letter-colour is requested off
+          else
+          {
+            // Check if already off
+            if(!(letterMem[index] & (1 << colour)))
+              pwmData[index][colour] = 0;
+
+            // Fade down this letter-colour
+            else
+            {
+              if(pwmData[index][colour] > 0)
+                pwmData[index][colour]--;
+              if(pwmData[index][colour] == 0)
+                letterMem[index] &= ~(1 << colour);
+            }
+          }
+        }
+    }
+#endif
+}
+
+bool wait(unsigned long delayTime)
+{
+  static unsigned long prevTime = millis();
+  bool retVal = FALSE;
+  
+  while(millis() - prevTime < delayTime)
+  {
+    // Process LED fade effect
+    handleFade();
+
+    // Process LED PWM control
+    handlePWM();
+
+    //Scan the pushbutton
+    if(handleModeButton())
+    {
+      retVal = TRUE;
+      break;
+    }
+  }
+
+  prevTime = millis();
+  return(retVal);
+}
+
+bool handleModeButton()
+{
+  static unsigned long scanTime = millis();
+  static bool lastState = 1;
+  static int debounce = 0;
+  static bool possibleLong = FALSE;
+  bool state = 0;
+  
+  // Scan button state every 1ms
+  if(millis() - scanTime >= 1)
+  {
+    scanTime += 1;
+    state = digitalRead(MODE_BUTTON);
+      
+    if(state != lastState)
+    {
+      debounce++;
+
+      // Check for long button press
+      if(debounce >= BUTTON_LONG)
+      {
+        signState = SIGN_SELECT; 
+        signActive = TRUE;         
+        lastState = state;
+        possibleLong = FALSE;
+        return(TRUE);
+      }
+
+      // Check for button release
+      else if((debounce >= BUTTON_SHORT) && (state == 1))
+        lastState = state;
+
+      // Check for possible long press on next release
+      else if((debounce >= BUTTON_SHORT) && (state == 0))
+        possibleLong = TRUE;
+    }
+    else
+    {
+      // Check for short button press (released after short threshold)
+      if((possibleLong == TRUE) && (state == 1))
+      {
+        if((signActive) && (signState < SIGN_SELECT))
+        {
+          signActive = FALSE;
+          fadeSpeed = brightMax;
+        }
+        else
+          signActive = TRUE;
+          
+        possibleLong = FALSE;
+        return(TRUE);
+      }
+      debounce = 0;
+    }
+  }
+  return(FALSE);
+}
+
+void configLED(int bright, int speed, bool instant)
+{ 
+  brightMax = bright;   // Set maximum brightness threshold
+  fadeSpeed = speed;    // Set the LED fade speed
+  instantOn = instant;  // Set instant on instead of fade on
 }
 
 // basic styles
@@ -192,32 +345,88 @@ void basicOff(int *data)
 {
   int i;
   for (i=0;i<LETTER_MAX;i++)
-  {
-      data[i] = 0;
-  }
-  updateLetters();
+    data[i] = 0;
 }
+
 void basicAlternateColor(int *data, int colorMask1, int colorMask2)
 {
   int i;
   for (i=0;i<LETTER_MAX;i++)
-  {
-      data[i] = (i % 2) ? colorMask1 : colorMask2;
-  }
-  updateLetters();
+    data[i] = (i % 2) ? colorMask1 : colorMask2;
+}
+
+void basicAlternateWord(int *data, int colorMask1, int colorMask2)
+{
+  int i;
+  for (i=0;i<LETTER_MAX;i++)
+    data[i] = i < MERRY_MAX ? colorMask1 : colorMask2;
 }
 
 void basicSingleColor(int *data, int colorMask)
 {
   int i;
   for (i=0;i<LETTER_MAX;i++)
-  {
     data[i]=colorMask;
+}
+
+void basicConstantLoad(int *data, const int *constant)
+{
+  int i;
+  for(i=0;i<LETTER_MAX;i++)
+    data[i] = constant[i];
+}
+
+void rotateLeft(int *data)
+{
+  int i;
+  int saved = data[0];
+  
+  for(i = 0; i < (LETTER_MAX - 1); i++)
+  {
+    data[i] = data[i + 1];
   }
-  updateLetters();
+  data[LETTER_MAX - 1] = saved;
+}
 
-  // not sure if we want to put delay here...todo
+void rotateRight(int *data)
+{
+  int i;
+  int saved = data[LETTER_MAX - 1];
+  
+  for(i = (LETTER_MAX - 1); i > 0; i--)
+  {
+    data[i] = data[i - 1];
+  }
+  data[0] = saved;
+}
 
+int shiftRight(int *data, int newData)
+{
+  int retValue = data[LETTER_MAX - 1];
+  
+  rotateRight(data);
+  data[0] = newData;
+  return(retValue);
+}
+
+void randomizeArray(int *data, int size)
+{
+  int index;
+  int pos1;
+  int pos2;
+  int swap;
+  
+  for(index = 0; index < size; index++)
+    data[index] = index;
+
+  for(index = 0; index < 10; index++)
+  {
+    pos1 = random(0, size);
+    pos2 = random(0, size);
+    swap = data[pos1];
+    data[pos1] = data[pos2];
+    data[pos2] = swap;
+  }  
 }
 
 // ----  styles 
@@ -226,12 +435,25 @@ void styleAlternateRedGreen(int *data)
   basicAlternateColor(data,RED_MASK,GREEN_MASK);
 }
 
+void styleAlternateGreenRed(int *data)
+{
+  basicAlternateColor(data,GREEN_MASK,RED_MASK);
+}
+
+void styleAltWordRedGreen(int *data)
+{
+  basicAlternateWord(data,RED_MASK,GREEN_MASK);
+}
+
+void styleAltWordGreenRed(int *data)
+{
+  basicAlternateWord(data,GREEN_MASK,RED_MASK);
+}
 
 void styleAlternateBlueGreen(int *data)
 {
   basicAlternateColor(data,GREEN_MASK,BLUE_MASK);
 }
-
 
 void styleRedColor(int *data)
 {
@@ -248,33 +470,204 @@ void styleBlueColor(int *data)
   basicSingleColor(data, BLUE_MASK);
 }
 
-#define STYLE_MAX 5
-void (*styleFuncList[STYLE_MAX])(int *) = { styleRedColor,
+void styleWhiteColor(int *data)
+{
+  basicSingleColor(data, BLUE_MASK | GREEN_MASK | RED_MASK);
+}
+
+#define BASIC_MAX 6
+void (*styleFuncListBasic[BASIC_MAX])(int *) = { styleRedColor,
+                                            styleGreenColor,
+                                            styleAltWordRedGreen,
+                                            styleAltWordGreenRed,
+                                            styleAlternateRedGreen,
+                                            styleAlternateGreenRed
+                                    };
+
+#define CRAZY_MAX 5
+void (*styleFuncListCrazy[CRAZY_MAX])(int *) = { styleRedColor,
                                             styleGreenColor,
                                             styleBlueColor,
                                             styleAlternateRedGreen,
                                             styleAlternateBlueGreen
                                     };
 
+void handleSelectMenu()
+{
+  int selection = 0;
+  int menuDelay;
+
+  configLED(PWM_MAX, 100, FALSE);
+
+  while(signState == SIGN_SELECT)
+  {
+    for(menuDelay = 0; menuDelay < SELECT_TIME; menuDelay++)
+    {
+      basicOff(letterData);
+      letterData[selection] = BLUE_MASK;
+      if(wait(250))
+        break;
+
+      basicOff(letterData);
+      if(wait(250))
+        break;
+    }
+
+    if(menuDelay < SELECT_TIME)
+    {
+      menuDelay = 0;
+      selection++;
+      if(selection > SIGN_MAX)
+        selection = 0;
+    }
+    else
+      signState = SIGN_BASIC + selection;
+  }
+}
+
 void loop()
 {
-  static int count = 0;
-  static bool toggle = 0;
-  int i;
+  int style = 0;
 
-  if(readButton())
-    toggle ^= 0x01;
-
-  if(toggle)
+  if(signActive)
   {
-    if(count++ > 5)
-      count = 0;
+    switch(signState)
+    {
+      case SIGN_SELECT:
+        handleSelectMenu();
+        break;
 
-    (*styleFuncList[count])(letterData);
-    delay(500);
+      case SIGN_BASIC:
+        configLED(PWM_MAX, 2000, FALSE);
+       
+        for(style = 0; style < BASIC_MAX; style++)
+        {
+          (*styleFuncListBasic[style])(letterData);
+          if(wait(5000))
+            break;
+            
+          // Begin to fade off before going to next
+          basicOff(letterData);
+          if(wait(1200))
+            break;
+        }
+        break;
+
+      case SIGN_CRAZY:
+        configLED(PWM_MAX, 100, FALSE);
+        
+        for(style = 0; style < CRAZY_MAX; style++)
+        {
+          (*styleFuncListCrazy[style])(letterData);
+          if(wait(300))
+            break;
+        }
+        break;
+
+      case SIGN_CHASE:
+        configLED(PWM_MAX, 400, FALSE);
+        style = BLUE_MASK;
+        
+        basicConstantLoad(letterData, CHASE);
+        while(!wait(400))
+          style = shiftRight(letterData, style);
+        break;
+
+      case SIGN_KNIGHT:
+        configLED(PWM_MAX, 600, TRUE);
+        basicOff(letterData);
+        letterData[0] = RED_MASK;
+        letterData[1] = RED_MASK;
+        
+        for(style = 0; style < 12; style++)
+        {
+          if(wait(150))
+            break;
+            
+          if(style < (6))
+          {
+            rotateRight(letterData);
+            rotateRight(letterData);
+          }
+          else
+          {
+            rotateLeft(letterData);
+            rotateLeft(letterData);
+          }
+        }
+        break;
+
+      case SIGN_RANDOM_CHARS:
+        int colour;
+        int count;
+        int pos[LETTER_MAX];
+
+        configLED(PWM_MAX, 1000, FALSE);
+        basicOff(letterData);
+        randomizeArray(pos, LETTER_MAX);
+
+        for(count = 0; count < 5; count++)
+        {
+          for(style = 0; style < LETTER_MAX; style++)
+          {
+            do
+            {
+              colour = random(1, 4);
+              colour = (colour == 3) ? 4 : colour;
+            }
+            while(letterData[pos[style]] == colour);
+
+            letterData[pos[style]] = colour;
+            if(wait(200))
+              break;
+          }
+          if(style != LETTER_MAX)
+            break;
+        }
+        if(style != LETTER_MAX)
+          break;
+          
+        for(style = 0; style < LETTER_MAX; style++)
+          {
+            letterData[pos[style]] = 0;
+            if(wait(300))
+              break;
+          }
+        break;
+                        
+      case SIGN_TEST_RED:
+        configLED(PWM_MAX, brightMax, TRUE);
+        styleRedColor(letterData);
+        wait(100);
+        break;
+
+      case SIGN_TEST_GREEN:
+        configLED(PWM_MAX, brightMax, TRUE);      
+        styleGreenColor(letterData);
+        wait(100);
+        break;
+
+      case SIGN_TEST_BLUE:
+        configLED(PWM_MAX, brightMax, TRUE);      
+        styleBlueColor(letterData);
+        wait(100);
+        break;
+
+      case SIGN_TEST_WHITE:
+        configLED(PWM_MAX, brightMax, TRUE);      
+        styleWhiteColor(letterData);
+        wait(100);
+        break;
+        
+      default:
+        basicOff(letterData);
+        wait(100);
+        break;
+    }
   }
   else
-  {
+  {  
     basicOff(letterData);
+    wait(100);
   }
 }
