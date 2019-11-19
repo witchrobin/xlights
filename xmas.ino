@@ -74,36 +74,36 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 #define FALSE 0
 #define TRUE  1
 
-#define BUTTON_SHORT 30
-#define BUTTON_LONG  1000
+#define BUTTON_SHORT 30       // 30ms to detect button press
+#define BUTTON_LONG  1000     // 1s to detect long button press
 
-#define SIGN_BASIC        0
-#define SIGN_CRAZY        1
-#define SIGN_CHASE        2
-#define SIGN_KNIGHT       3
-#define SIGN_RANDOM_CHARS 4
-#define SIGN_TEST_RED     5
-#define SIGN_TEST_GREEN   6
-#define SIGN_TEST_BLUE    7
-#define SIGN_TEST_WHITE   8
+#define SIGN_BASIC        0   // This will be the basic, non-seizure inducing sequence
+#define SIGN_CRAZY        1   // This will be a much more dazzling display of capabilities
+#define SIGN_CHASE        2   // Demo of chase
+#define SIGN_KNIGHT       3   // Demo of Knight Rider
+#define SIGN_RANDOM_CHARS 4   // Demo of random characters
+#define SIGN_TEST_RED     5   // Test of solid red
+#define SIGN_TEST_GREEN   6   // Test of solid green
+#define SIGN_TEST_BLUE    7   // Test of solid blue
+#define SIGN_TEST_WHITE   8   // Test of solid white
 #define SIGN_MAX          SIGN_TEST_WHITE
-#define SIGN_SELECT       99
+#define SIGN_SELECT       99  // Select mode state
 
 #define SELECT_TIME   6    // x500ms
 
-#define PWM_MAX       33   // 33 x .3ms = 10ms pm period
+#define PWM_MAX       33   // 33 x .3ms = 10ms pwm period
 
 #define RED_MASK     0x01
 #define GREEN_MASK   0x02
 #define BLUE_MASK    0x04
+#define WHITE_MASK   RED_MASK | GREEN_MASK | BLUE_MASK
 
 // Scenes - Single states          M  E  R  R  Y  C  H  R  I  S  T  M  A  S
 const int CHASE[LETTER_MAX]    = { 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2 };
 
 const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I', 'S', 'T', 'M', 'A', 'S'};
 
-const int KNIGHT_TIME[(LETTER_MAX - 1) * 2] = { 200, 150, 100, 80, 60, 40, 30, 30, 40, 60, 80, 100, 150, 200, 150, 100, 80, 60, 40, 30, 30, 40, 60, 80, 100, 150};
-
+// Globals
 int letterData[LETTER_MAX] = { 0 };
 int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
 int signState = SIGN_BASIC;
@@ -137,17 +137,6 @@ void setup()
 
   pinMode(MODE_BUTTON, INPUT);
   randomSeed(analogRead(15));
-
-
-
-
-/*
-  delay(5000);
-  rand = random(50, 100);    
-  Serial.print(rand);
-  delay(2000);
-*/  
-
 }
 
 void handlePWM()
@@ -335,7 +324,7 @@ bool handleModeButton()
 void configLED(int bright, int speed, bool instant)
 { 
   brightMax = bright;   // Set maximum brightness threshold
-  fadeSpeed = speed;    // Set the LED fade speed
+  fadeSpeed = speed;    // Set the LED fade speed (ms to fade)
   instantOn = instant;  // Set instant on instead of fade on
 }
 
@@ -344,35 +333,40 @@ void configLED(int bright, int speed, bool instant)
 void basicOff(int *data)
 {
   int i;
-  for (i=0;i<LETTER_MAX;i++)
+  
+  for (i = 0; i < LETTER_MAX; i++)
     data[i] = 0;
 }
 
 void basicAlternateColor(int *data, int colorMask1, int colorMask2)
 {
   int i;
-  for (i=0;i<LETTER_MAX;i++)
+  
+  for (i = 0; i < LETTER_MAX; i++)
     data[i] = (i % 2) ? colorMask1 : colorMask2;
 }
 
 void basicAlternateWord(int *data, int colorMask1, int colorMask2)
 {
   int i;
-  for (i=0;i<LETTER_MAX;i++)
+  
+  for (i = 0; i < LETTER_MAX; i++)
     data[i] = i < MERRY_MAX ? colorMask1 : colorMask2;
 }
 
 void basicSingleColor(int *data, int colorMask)
 {
   int i;
-  for (i=0;i<LETTER_MAX;i++)
-    data[i]=colorMask;
+  
+  for (i = 0; i < LETTER_MAX; i++)
+    data[i] = colorMask;
 }
 
 void basicConstantLoad(int *data, const int *constant)
 {
   int i;
-  for(i=0;i<LETTER_MAX;i++)
+  
+  for(i = 0; i < LETTER_MAX; i++)
     data[i] = constant[i];
 }
 
@@ -398,6 +392,15 @@ void rotateRight(int *data)
     data[i] = data[i - 1];
   }
   data[0] = saved;
+}
+
+int shiftLeft(int *data, int newData)
+{
+  int retValue = data[0];
+  
+  rotateLeft(data);
+  data[LETTER_MAX - 1] = newData;
+  return(retValue);
 }
 
 int shiftRight(int *data, int newData)
@@ -472,7 +475,7 @@ void styleBlueColor(int *data)
 
 void styleWhiteColor(int *data)
 {
-  basicSingleColor(data, BLUE_MASK | GREEN_MASK | RED_MASK);
+  basicSingleColor(data, WHITE_MASK);
 }
 
 #define BASIC_MAX 6
@@ -605,7 +608,7 @@ void loop()
         configLED(PWM_MAX, 1000, FALSE);
         basicOff(letterData);
         randomizeArray(pos, LETTER_MAX);
-
+          
         for(count = 0; count < 5; count++)
         {
           for(style = 0; style < LETTER_MAX; style++)
