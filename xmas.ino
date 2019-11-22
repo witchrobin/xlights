@@ -87,7 +87,8 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 #define SIGN_TEST_GREEN   6   // Test of solid green
 #define SIGN_TEST_BLUE    7   // Test of solid blue
 #define SIGN_TEST_WHITE   8   // Test of solid white
-#define SIGN_MAX          SIGN_TEST_WHITE
+#define SIGN_SOLID_ALTERNATE 9
+#define SIGN_MAX          SIGN_SOLID_ALTERNATE
 #define SIGN_SELECT       99  // Select mode state
 
 #define SELECT_TIME   6    // x500ms
@@ -488,6 +489,12 @@ void (*styleFuncListBasic[BASIC_MAX])(int *) = { styleRedColor,
                                             styleAlternateGreenRed
                                     };
 
+#define SOLID_MAX 3
+void (*styleFuncListSolid[SOLID_MAX])(int *) = { styleRedColor,
+                                                 styleGreenColor,
+                                                 styleBlueColor
+                                               };
+
 #define CRAZY_MAX 5
 void (*styleFuncListCrazy[CRAZY_MAX])(int *) = { styleRedColor,
                                             styleGreenColor,
@@ -661,6 +668,22 @@ void loop()
         configLED(PWM_MAX, brightMax, TRUE);      
         styleWhiteColor(letterData);
         wait(100);
+        break;
+      
+      case SIGN_SOLID_ALTERNATE:
+        configLED(PWM_MAX, 2000, FALSE);
+       
+        for(style = 0; style < SOLID_MAX; style++)
+        {
+          (*styleFuncListSolid[style])(letterData);
+          if(wait(5000))
+            break;
+            
+          // Begin to fade off before going to next
+          basicOff(letterData);
+          if(wait(1200))
+            break;
+        }
         break;
         
       default:
