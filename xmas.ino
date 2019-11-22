@@ -1,5 +1,4 @@
 // XMAS Light Driver for Ardino Mega
-// Jon was here.
 #define DEBUGMODE 0
 
 // Pin defines
@@ -109,7 +108,7 @@ const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I',
 int letterData[LETTER_MAX] = { 0 };
 int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
 int signState = SIGN_BASIC;
-bool signActive = FALSE;
+bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = brightMax;
 bool instantOn = FALSE;
