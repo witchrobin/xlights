@@ -88,7 +88,8 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 #define SIGN_TEST_BLUE    7   // Test of solid blue
 #define SIGN_TEST_WHITE   8   // Test of solid white
 #define SIGN_SOLID_ALTERNATE 9
-#define SIGN_MAX          SIGN_SOLID_ALTERNATE
+#define SIGN_BREATHE 10
+#define SIGN_MAX          SIGN_BREATHE
 #define SIGN_SELECT       99  // Select mode state
 
 #define SELECT_TIME   6    // x500ms
@@ -113,6 +114,7 @@ bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = brightMax;
 bool instantOn = FALSE;
+int loopCounter =1;
 
 void setup()
 {
@@ -372,6 +374,29 @@ void basicConstantLoad(int *data, const int *constant)
     data[i] = constant[i];
 }
 
+void breatheOut(int *data)
+{
+  int i;
+  for(i=0;i<6;i++)
+  {
+    data[i] = data[i+1];
+    data[13-i] = data[13-i-1];
+  }
+}
+
+void breatheIn(int *data)
+{
+  int i;
+  data[0]=0;
+  data[13]=0;
+  for(i=0;i<6;i++)
+  {
+    data[6-i] = data[6-i-1];
+    data[7+i] = data[7+i+1];
+  }
+  
+}
+
 void rotateLeft(int *data)
 {
   int i;
@@ -540,6 +565,7 @@ void loop()
 {
   int style = 0;
 
+
   if(signActive)
   {
     switch(signState)
@@ -586,23 +612,24 @@ void loop()
 
       case SIGN_KNIGHT:
         configLED(PWM_MAX, 600, TRUE);
-        basicOff(letterData);
-        letterData[0] = RED_MASK;
-        letterData[1] = RED_MASK;
+//        basicOff(letterData);
+        styleRedColor(letterData);
+        letterData[0] = GREEN_MASK;
+//        letterData[1] = WHITE_MASK;
         
-        for(style = 0; style < 12; style++)
+        for(style = 0; style < 26 ;style++)
         {
-          if(wait(150))
+          if(wait(80))
             break;
             
-          if(style < (6))
+          if(style < (LETTER_MAX -1 ))
           {
             rotateRight(letterData);
-            rotateRight(letterData);
+//            rotateRight(letterData);
           }
           else
           {
-            rotateLeft(letterData);
+//            rotateLeft(letterData);
             rotateLeft(letterData);
           }
         }
@@ -685,12 +712,38 @@ void loop()
             break;
         }
         break;
+      
+      case SIGN_BREATHE:
+        configLED(PWM_MAX, 100, FALSE);
+        basicOff(letterData);
+        letterData[6] = loopCounter;
+        letterData[7] = loopCounter;
+        
+        for(style = 0; style < 13; style++)
+        {
+          if(wait(200))
+            break;
+            
+          if(style < (6))
+          {
+            breatheOut(letterData);
+          }
+          else
+          {
+            breatheIn(letterData);
+          }
+        }
+        break;
         
       default:
         basicOff(letterData);
         wait(100);
         break;
     }
+
+    // variable to track loop interation from 1-6
+    loopCounter = ((loopCounter + 1) % 7)+1;
+
   }
   else
   {  
