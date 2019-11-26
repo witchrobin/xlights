@@ -109,7 +109,7 @@ const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I',
 // Globals
 int letterData[LETTER_MAX] = { 0 };
 int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
-int signState = SIGN_BREATHE;
+int signState = SIGN_BASIC;
 bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = brightMax;
@@ -512,18 +512,19 @@ void (*styleFuncListBasic[BASIC_MAX])(int *) = { styleRedColor,
                                             styleAlternateGreenRed
                                     };
 
-#define SOLID_MAX 3
+#define SOLID_MAX 4
 void (*styleFuncListSolid[SOLID_MAX])(int *) = { styleRedColor,
                                                  styleGreenColor,
-                                                 styleBlueColor
+                                                 styleBlueColor,
+                                                 styleWhiteColor
                                                };
 
 #define CRAZY_MAX 5
-void (*styleFuncListCrazy[CRAZY_MAX])(int *) = { styleRedColor,
-                                            styleGreenColor,
-                                            styleBlueColor,
-                                            styleAlternateRedGreen,
-                                            styleAlternateBlueGreen
+void (*styleFuncListCrazy[CRAZY_MAX])() = { handleRandomChars,
+                                            handleSignRider,
+                                            handleSignBreathe,
+                                            handleSignColourChase,
+                                            handleSolidAlternate
                                     };
 
 void handleSelectMenu()
@@ -569,11 +570,6 @@ void handleSignBasic()
     (*styleFuncListBasic[style])(letterData);
     if(wait(6000))
       break;
-
-    // Begin to fade off before going to next
-//    basicOff(letterData);
-//    if(wait(1200))
-//      break;
   }
 }
 
@@ -584,8 +580,8 @@ void handleSignCrazy()
         
   for(style = 0; style < CRAZY_MAX; style++)
   {
-    (*styleFuncListCrazy[style])(letterData);
-    if(wait(300))
+    (*styleFuncListCrazy[style])();
+    if(!signActive)
       break;
   }
 }
@@ -593,36 +589,38 @@ void handleSignCrazy()
 void handleSignColourChase()
 {
   int saved = BLUE_MASK;
+  int index;
+
   configLED(PWM_MAX, 400, FALSE);
         
   basicConstantLoad(letterData, CHASE);
-  while(!wait(400))
+  for(index = 0; index < 21; index++)
+  {
     saved = shiftRight(letterData, saved);
+    if(wait(400))
+      break;
+  }
 }
 
 void handleSignRider()
 {
   int index;
+  int repeat;
   configLED(PWM_MAX, 600, TRUE);
-//  basicOff(letterData);
+
   styleRedColor(letterData);
   letterData[0] = GREEN_MASK;
-//  letterData[1] = WHITE_MASK;
-        
-  for(index = 0; index < 26; index++)
+  for(repeat = 0; repeat < 5; repeat++)
   {
-    if(wait(80))
-      break;
+    for(index = 0; index < 26; index++)
+    {
+      if(wait(80))
+        break;
             
-    if(index < (LETTER_MAX -1 ))
-    {
-      rotateRight(letterData);
-//      rotateRight(letterData);
-    }
-    else
-    {
-//      rotateLeft(letterData);
-      rotateLeft(letterData);
+      if(index < 13 )
+        rotateRight(letterData);
+      else
+        rotateLeft(letterData);
     }
   }
 }
@@ -666,7 +664,7 @@ void handleRandomChars()
 void handleSolidAlternate()
 {
   int style;
-  configLED(PWM_MAX, 2000, FALSE);
+  configLED(PWM_MAX, 3500, FALSE);
        
   for(style = 0; style < SOLID_MAX; style++)
   {
@@ -695,16 +693,13 @@ void handleSignBreathe()
         return;
             
       if(style < (6))
-      {
         breatheOut(letterData);
-      }
       else
-      {
         breatheIn(letterData);
-      }
     }
-      basicOff(letterData);
-      wait(200);
+
+    basicOff(letterData);
+    wait(200);
   }
 }
 
