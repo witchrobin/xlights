@@ -575,18 +575,18 @@ void loop()
         break;
 
       case SIGN_BASIC:
-        configLED(PWM_MAX, 2000, FALSE);
+        configLED(PWM_MAX, 3000, FALSE);
        
         for(style = 0; style < BASIC_MAX; style++)
         {
           (*styleFuncListBasic[style])(letterData);
-          if(wait(5000))
+          if(wait(6000))
             break;
             
           // Begin to fade off before going to next
-          basicOff(letterData);
-          if(wait(1200))
-            break;
+//          basicOff(letterData);
+//          if(wait(1200))
+//            break;
         }
         break;
 
@@ -707,9 +707,9 @@ void loop()
             break;
             
           // Begin to fade off before going to next
-          basicOff(letterData);
-          if(wait(1200))
-            break;
+//          basicOff(letterData);
+//          if(wait(1200))
+//            break;
         }
         break;
       
