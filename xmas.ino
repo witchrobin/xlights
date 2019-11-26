@@ -109,7 +109,7 @@ const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I',
 // Globals
 int letterData[LETTER_MAX] = { 0 };
 int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
-int signState = SIGN_BASIC;
+int signState = SIGN_BREATHE;
 bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = brightMax;
@@ -386,14 +386,13 @@ void breatheOut(int *data)
 void breatheIn(int *data)
 {
   int i;
-  data[0]=0;
-  data[13]=0;
   for(i=0;i<6;i++)
   {
     data[6-i] = data[6-i-1];
     data[7+i] = data[7+i+1];
   }
-  
+  data[0]=0;
+  data[13]=0;
 }
 
 void rotateLeft(int *data)
@@ -681,15 +680,12 @@ void handleSignBreathe()
 {
   int style;
   int loop;
-//  int loopCounter =1;
 
-  configLED(PWM_MAX, 100, FALSE);
+  configLED(PWM_MAX, 150, FALSE);
   basicOff(letterData);
 
   for(loop = 1; loop < 8; loop++)
   {
-//    letterData[6] = loopCounter;
-//    letterData[7] = loopCounter;
     letterData[6] = loop;
     letterData[7] = loop;
         
@@ -707,10 +703,8 @@ void handleSignBreathe()
         breatheIn(letterData);
       }
     }
-
-    // variable to track loop interation from 1-6
-//    loopCounter = ((loopCounter + 1) % 7)+1;
-
+      basicOff(letterData);
+      wait(200);
   }
 }
 
