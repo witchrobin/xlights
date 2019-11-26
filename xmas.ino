@@ -80,7 +80,7 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 
 #define SIGN_BASIC        0   // This will be the basic, non-seizure inducing sequence
 #define SIGN_CRAZY        1   // This will be a much more dazzling display of capabilities
-#define SIGN_CHASE        2   // Demo of chase
+#define SIGN_COLOUR_CHASE 2   // Demo of chase
 #define SIGN_KNIGHT       3   // Demo of Knight Rider
 #define SIGN_RANDOM_CHARS 4   // Demo of random characters
 #define SIGN_TEST_RED     5   // Test of solid red
@@ -114,7 +114,6 @@ bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = brightMax;
 bool instantOn = FALSE;
-int loopCounter =1;
 
 void setup()
 {
@@ -561,11 +560,162 @@ void handleSelectMenu()
   }
 }
 
+void handleSignBasic()
+{
+  int style;
+  configLED(PWM_MAX, 3000, FALSE);
+       
+  for(style = 0; style < BASIC_MAX; style++)
+  {
+    (*styleFuncListBasic[style])(letterData);
+    if(wait(6000))
+      break;
+
+    // Begin to fade off before going to next
+//    basicOff(letterData);
+//    if(wait(1200))
+//      break;
+  }
+}
+
+void handleSignCrazy()
+{
+  int style;
+  configLED(PWM_MAX, 100, FALSE);
+        
+  for(style = 0; style < CRAZY_MAX; style++)
+  {
+    (*styleFuncListCrazy[style])(letterData);
+    if(wait(300))
+      break;
+  }
+}
+
+void handleSignColourChase()
+{
+  int saved = BLUE_MASK;
+  configLED(PWM_MAX, 400, FALSE);
+        
+  basicConstantLoad(letterData, CHASE);
+  while(!wait(400))
+    saved = shiftRight(letterData, saved);
+}
+
+void handleSignRider()
+{
+  int index;
+  configLED(PWM_MAX, 600, TRUE);
+//  basicOff(letterData);
+  styleRedColor(letterData);
+  letterData[0] = GREEN_MASK;
+//  letterData[1] = WHITE_MASK;
+        
+  for(index = 0; index < 26; index++)
+  {
+    if(wait(80))
+      break;
+            
+    if(index < (LETTER_MAX -1 ))
+    {
+      rotateRight(letterData);
+//      rotateRight(letterData);
+    }
+    else
+    {
+//      rotateLeft(letterData);
+      rotateLeft(letterData);
+    }
+  }
+}
+
+void handleRandomChars()
+{
+  int index;
+  int colour;
+  int count;
+  int pos[LETTER_MAX];
+
+  configLED(PWM_MAX, 1000, FALSE);
+  basicOff(letterData);
+  randomizeArray(pos, LETTER_MAX);
+          
+  for(count = 0; count < 5; count++)
+  {
+    for(index = 0; index < LETTER_MAX; index++)
+    {
+      do
+      {
+        colour = random(1, 4);
+        colour = (colour == 3) ? 4 : colour;
+      }
+      while(letterData[pos[index]] == colour);
+
+      letterData[pos[index]] = colour;
+      if(wait(200))
+        return;
+    }
+  }
+          
+  for(index = 0; index < LETTER_MAX; index++)
+  {   
+    letterData[pos[index]] = 0;
+    if(wait(300))
+      return;
+  }
+}
+
+void handleSolidAlternate()
+{
+  int style;
+  configLED(PWM_MAX, 2000, FALSE);
+       
+  for(style = 0; style < SOLID_MAX; style++)
+  {
+    (*styleFuncListSolid[style])(letterData);
+    if(wait(5000))
+      break;
+  }
+}
+
+void handleSignBreathe()
+{
+  int style;
+  int loop;
+//  int loopCounter =1;
+
+  configLED(PWM_MAX, 100, FALSE);
+  basicOff(letterData);
+
+  for(loop = 1; loop < 8; loop++)
+  {
+//    letterData[6] = loopCounter;
+//    letterData[7] = loopCounter;
+    letterData[6] = loop;
+    letterData[7] = loop;
+        
+    for(style = 0; style < 13; style++)
+    {
+      if(wait(200))
+        break;
+            
+      if(style < (6))
+      {
+        breatheOut(letterData);
+      }
+      else
+      {
+        breatheIn(letterData);
+      }
+    }
+
+    // variable to track loop interation from 1-6
+//    loopCounter = ((loopCounter + 1) % 7)+1;
+
+  }
+}
+
 void loop()
 {
-  int style = 0;
-
-
   if(signActive)
   {
     switch(signState)
@@ -575,102 +725,23 @@ void loop()
         break;
 
       case SIGN_BASIC:
-        configLED(PWM_MAX, 3000, FALSE);
-       
-        for(style = 0; style < BASIC_MAX; style++)
-        {
-          (*styleFuncListBasic[style])(letterData);
-          if(wait(6000))
-            break;
-            
-          // Begin to fade off before going to next
-//          basicOff(letterData);
-//          if(wait(1200))
-//            break;
-        }
+        handleSignBasic();
         break;
 
       case SIGN_CRAZY:
-        configLED(PWM_MAX, 100, FALSE);
-        
-        for(style = 0; style < CRAZY_MAX; style++)
-        {
-          (*styleFuncListCrazy[style])(letterData);
-          if(wait(300))
-            break;
-        }
+        handleSignCrazy();
         break;
 
-      case SIGN_CHASE:
-        configLED(PWM_MAX, 400, FALSE);
-        style = BLUE_MASK;
-        
-        basicConstantLoad(letterData, CHASE);
-        while(!wait(400))
-          style = shiftRight(letterData, style);
+      case SIGN_COLOUR_CHASE:
+        handleSignColourChase();
         break;
 
       case SIGN_KNIGHT:
-        configLED(PWM_MAX, 600, TRUE);
-//        basicOff(letterData);
-        styleRedColor(letterData);
-        letterData[0] = GREEN_MASK;
-//        letterData[1] = WHITE_MASK;
-        
-        for(style = 0; style < 26 ;style++)
-        {
-          if(wait(80))
-            break;
-            
-          if(style < (LETTER_MAX -1 ))
-          {
-            rotateRight(letterData);
-//            rotateRight(letterData);
-          }
-          else
-          {
-//            rotateLeft(letterData);
-            rotateLeft(letterData);
-          }
-        }
+        handleSignRider();
         break;
 
       case SIGN_RANDOM_CHARS:
-        int colour;
-        int count;
-        int pos[LETTER_MAX];
-
-        configLED(PWM_MAX, 1000, FALSE);
-        basicOff(letterData);
-        randomizeArray(pos, LETTER_MAX);
-          
-        for(count = 0; count < 5; count++)
-        {
-          for(style = 0; style < LETTER_MAX; style++)
-          {
-            do
-            {
-              colour = random(1, 4);
-              colour = (colour == 3) ? 4 : colour;
-            }
-            while(letterData[pos[style]] == colour);
-
-            letterData[pos[style]] = colour;
-            if(wait(200))
-              break;
-          }
-          if(style != LETTER_MAX)
-            break;
-        }
-        if(style != LETTER_MAX)
-          break;
-          
-        for(style = 0; style < LETTER_MAX; style++)
-          {
-            letterData[pos[style]] = 0;
-            if(wait(300))
-              break;
-          }
+        handleRandomChars();
         break;
                         
       case SIGN_TEST_RED:
@@ -698,41 +769,11 @@ void loop()
         break;
       
       case SIGN_SOLID_ALTERNATE:
-        configLED(PWM_MAX, 2000, FALSE);
-       
-        for(style = 0; style < SOLID_MAX; style++)
-        {
-          (*styleFuncListSolid[style])(letterData);
-          if(wait(5000))
-            break;
-            
-          // Begin to fade off before going to next
-//          basicOff(letterData);
-//          if(wait(1200))
-//            break;
-        }
+        handleSolidAlternate();
         break;
       
       case SIGN_BREATHE:
-        configLED(PWM_MAX, 100, FALSE);
-        basicOff(letterData);
-        letterData[6] = loopCounter;
-        letterData[7] = loopCounter;
-        
-        for(style = 0; style < 13; style++)
-        {
-          if(wait(200))
-            break;
-            
-          if(style < (6))
-          {
-            breatheOut(letterData);
-          }
-          else
-          {
-            breatheIn(letterData);
-          }
-        }
+        handleSignBreathe();
         break;
         
       default:
@@ -740,10 +781,6 @@ void loop()
         wait(100);
         break;
     }
-
-    // variable to track loop interation from 1-6
-    loopCounter = ((loopCounter + 1) % 7)+1;
-
   }
   else
   {  
