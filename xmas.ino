@@ -696,7 +696,7 @@ void handleSignBreathe()
     for(style = 0; style < 13; style++)
     {
       if(wait(200))
-        break;
+        return;
             
       if(style < (6))
       {
