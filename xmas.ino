@@ -109,7 +109,7 @@ const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I',
 // Globals
 int letterData[LETTER_MAX] = { 0 };
 int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
-int signState = SIGN_BASIC;
+int signState = SIGN_CRAZY;
 bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = 0;
@@ -522,9 +522,9 @@ void (*styleFuncListSolid[SOLID_MAX])(int *) = { styleRedColor,
 #define CRAZY_MAX 5
 void (*styleFuncListCrazy[CRAZY_MAX])() = { handleRandomChars,
                                             handleSignRider,
-                                            handleSignBreathe,
                                             handleSignColourChase,
-                                            handleSolidAlternate
+                                            handleSolidAlternate,
+                                            handleSignBreathe
                                     };
 
 void handleSelectMenu()
@@ -634,6 +634,7 @@ void handleRandomChars()
 
   configLED(PWM_MAX, 1000, FALSE);
   basicOff(letterData);
+  wait(500);
   randomizeArray(pos, LETTER_MAX);
           
   for(count = 0; count < 5; count++)
@@ -656,9 +657,10 @@ void handleRandomChars()
   for(index = 0; index < LETTER_MAX; index++)
   {   
     letterData[pos[index]] = 0;
-    if(wait(300))
+    if(wait(200))
       return;
   }
+  wait(1000);
 }
 
 void handleSolidAlternate()
@@ -689,7 +691,7 @@ void handleSignBreathe()
         
     for(style = 0; style < 13; style++)
     {
-      if(wait(200))
+      if(wait(180))
         return;
             
       if(style < (6))
