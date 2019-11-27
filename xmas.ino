@@ -88,8 +88,9 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 #define SIGN_TEST_BLUE    7   // Test of solid blue
 #define SIGN_TEST_WHITE   8   // Test of solid white
 #define SIGN_SOLID_ALTERNATE 9
-#define SIGN_BREATHE 10
-#define SIGN_MAX          SIGN_BREATHE
+#define SIGN_BREATHE      10
+#define SIGN_POLICE       11
+#define SIGN_MAX          SIGN_POLICE
 #define SIGN_SELECT       99  // Select mode state
 
 #define SELECT_TIME   6    // x500ms
@@ -103,6 +104,8 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 
 // Scenes - Single states          M  E  R  R  Y  C  H  R  I  S  T  M  A  S
 const int CHASE[LETTER_MAX]    = { 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2 };
+const int POPO1[LETTER_MAX]    = { 1, 1, 1, 1, 1, 1, 0, 0, 4, 4, 4, 4, 4, 4 };
+const int POPO2[LETTER_MAX]    = { 4, 4, 4, 4, 4, 4, 0, 0, 1, 1, 1, 1, 1, 1 };
 
 const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I', 'S', 'T', 'M', 'A', 'S'};
 
@@ -626,6 +629,28 @@ bool handleSignRider()
   return(FALSE);
 }
 
+bool handleUnderArrest()
+{
+  int index;
+  bool flashColour = 0;
+
+  configLED(PWM_MAX, 50, TRUE);
+
+  for(index = 0; index < 2000; index++)
+  {
+    if(flashColour)
+      basicConstantLoad(letterData, POPO1);
+    else
+      basicConstantLoad(letterData, POPO2);
+    
+    flashColour ^= 0x01;
+
+    if(wait(350))
+      return(TRUE);
+  }
+  return(FALSE);
+}
+
 bool handleRandomChars()
 {
   int index;
@@ -772,7 +797,12 @@ void loop()
       case SIGN_BREATHE:
         handleSignBreathe();
         break;
-        
+      
+      case SIGN_POLICE:
+        handleUnderArrest();
+        signState = SIGN_BASIC;
+        break;
+
       default:
         basicOff(letterData);
         wait(100);
