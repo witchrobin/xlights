@@ -112,7 +112,7 @@ int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
 int signState = SIGN_BASIC;
 bool signActive = TRUE;
 int brightMax = PWM_MAX;
-int fadeSpeed = brightMax;
+int fadeSpeed = 0;
 bool instantOn = FALSE;
 
 void setup()
@@ -191,7 +191,7 @@ void handleFade()
 #else
 
   //Process LED fade effect
-    if(millis() - fadeTime >= (fadeSpeed / brightMax))
+    if(millis() - fadeTime >= ((fadeSpeed < PWM_MAX ? PWM_MAX : fadeSpeed) / brightMax))
     {
       fadeTime = millis();
       
@@ -310,7 +310,7 @@ bool handleModeButton()
         if((signActive) && (signState < SIGN_SELECT))
         {
           signActive = FALSE;
-          fadeSpeed = brightMax;
+          fadeSpeed = 0;
         }
         else
           signActive = TRUE;
@@ -734,25 +734,25 @@ void loop()
         break;
                         
       case SIGN_TEST_RED:
-        configLED(PWM_MAX, brightMax, TRUE);
+        configLED(PWM_MAX, 0, TRUE);
         styleRedColor(letterData);
         wait(100);
         break;
 
       case SIGN_TEST_GREEN:
-        configLED(PWM_MAX, brightMax, TRUE);      
+        configLED(PWM_MAX, 0, TRUE);      
         styleGreenColor(letterData);
         wait(100);
         break;
 
       case SIGN_TEST_BLUE:
-        configLED(PWM_MAX, brightMax, TRUE);      
+        configLED(PWM_MAX, 0, TRUE);      
         styleBlueColor(letterData);
         wait(100);
         break;
 
       case SIGN_TEST_WHITE:
-        configLED(PWM_MAX, brightMax, TRUE);      
+        configLED(PWM_MAX, 0, TRUE);      
         styleWhiteColor(letterData);
         wait(100);
         break;
