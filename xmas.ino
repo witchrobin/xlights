@@ -78,23 +78,27 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 #define BUTTON_SHORT 30       // 30ms to detect button press
 #define BUTTON_LONG  1000     // 1s to detect long button press
 
+// Blue Level
 #define SIGN_BASIC        0   // This will be the basic, non-seizure inducing sequence
 #define SIGN_CRAZY        1   // This will be a much more dazzling display of capabilities
 #define SIGN_COLOUR_CHASE 2   // Demo of chase
 #define SIGN_KNIGHT       3   // Demo of Knight Rider
 #define SIGN_RANDOM_CHARS 4   // Demo of random characters
-#define SIGN_TEST_RED     5   // Test of solid red
-#define SIGN_TEST_GREEN   6   // Test of solid green
-#define SIGN_TEST_BLUE    7   // Test of solid blue
-#define SIGN_TEST_WHITE   8   // Test of solid white
-#define SIGN_SOLID_ALTERNATE 9
-#define SIGN_BREATHE      10
-#define SIGN_POLICE       11
-#define SIGN_NEW1         12
-#define SIGN_NEW2         13
-#define SIGN_NEW3         14
-#define SIGN_NEW4         15
-#define SIGN_MAX          SIGN_NEW4
+#define SIGN_SOLID_ALTERNATE 5
+#define SIGN_BREATHE      6
+#define SIGN_POLICE       7
+#define SIGN_NEW1         8
+#define SIGN_NEW2         9
+#define SIGN_NEW3         10
+#define SIGN_NEW4         11
+#define SIGN_NEW5         12
+#define SIGN_NEW6         13
+// Green Level
+#define SIGN_TEST_RED     14   // Test of solid red
+#define SIGN_TEST_GREEN   15   // Test of solid green
+#define SIGN_TEST_BLUE    16   // Test of solid blue
+#define SIGN_TEST_WHITE   17   // Test of solid white
+#define SIGN_MAX          SIGN_TEST_WHITE
 #define SIGN_SELECT       99  // Select mode state
 
 #define SELECT_TIME   6    // x500ms
@@ -123,6 +127,7 @@ bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = 0;
 bool instantOn = FALSE;
+int selection = 0;
 
 void setup()
 {
@@ -296,8 +301,12 @@ bool handleModeButton()
       // Check for long button press
       if(debounce >= BUTTON_LONG)
       {
+        // Check if long press from within menu
+        if(signState == SIGN_SELECT)
+          selection = SIGN_MAX;
+
         signState = SIGN_SELECT; 
-        signActive = TRUE;         
+        signActive = TRUE;
         lastState = state;
         possibleLong = FALSE;
         return(TRUE);
@@ -538,7 +547,6 @@ bool (*styleFuncListCrazy[CRAZY_MAX])() = { handleRandomChars,
 
 void handleSelectMenu()
 {
-  static int selection = 0;
   int colour;
   int position;
   int menuDelay;
@@ -797,6 +805,7 @@ void loop()
         handleSelectMenu();
         break;
 
+// Blue Level
       case SIGN_BASIC:        // M
         handleSignBasic();
         break;
@@ -817,13 +826,26 @@ void loop()
         handleRandomChars();
         break;
                         
-      case SIGN_TEST_RED:     // C
+      case SIGN_SOLID_ALTERNATE: // C
+        handleSolidAlternate();
+        break;
+      
+      case SIGN_BREATHE:       // H
+        handleSignBreathe();
+        break;
+      
+      case SIGN_POLICE:        // R
+        handleUnderArrest();
+        break;
+
+// Green Level
+      case SIGN_TEST_RED:     // M
         configLED(PWM_MAX, 0, TRUE);
         styleRedColor(letterData);
         wait(100);
         break;
 
-      case SIGN_TEST_GREEN:    // H
+      case SIGN_TEST_GREEN:    // E
         configLED(PWM_MAX, 0, TRUE);      
         styleGreenColor(letterData);
         wait(100);
@@ -835,24 +857,18 @@ void loop()
         wait(100);
         break;
 
-      case SIGN_TEST_WHITE:    // I
+      case SIGN_TEST_WHITE:    // R
         configLED(PWM_MAX, 0, TRUE);      
         styleWhiteColor(letterData);
         wait(100);
         break;
-      
-      case SIGN_SOLID_ALTERNATE: // S
-        handleSolidAlternate();
-        break;
-      
-      case SIGN_BREATHE:       // T
-        handleSignBreathe();
-        break;
-      
-      case SIGN_POLICE:        // M
-        handleUnderArrest();
-        break;
 
+      case SIGN_NEW1: 
+      case SIGN_NEW2: 
+      case SIGN_NEW3: 
+      case SIGN_NEW4: 
+      case SIGN_NEW5: 
+      case SIGN_NEW6:                               
       default:
         basicOff(letterData);
         wait(100);
