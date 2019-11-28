@@ -90,7 +90,11 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 #define SIGN_SOLID_ALTERNATE 9
 #define SIGN_BREATHE      10
 #define SIGN_POLICE       11
-#define SIGN_MAX          SIGN_POLICE
+#define SIGN_NEW1         12
+#define SIGN_NEW2         13
+#define SIGN_NEW3         14
+#define SIGN_NEW4         15
+#define SIGN_MAX          SIGN_NEW4
 #define SIGN_SELECT       99  // Select mode state
 
 #define SELECT_TIME   6    // x500ms
@@ -105,16 +109,16 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 // Scenes - Single states          M  E  R  R  Y  C  H  R  I  S  T  M  A  S
 const int CHASE[LETTER_MAX]    = { 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2 };
 const int POPO1A[LETTER_MAX]   = { 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
-const int POPO1B[LETTER_MAX]   = { 1, 1, 1, 1, 1, 1, 1, 0, 0, 7, 7, 7, 7, 0 };
+const int POPO1B[LETTER_MAX]   = { 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 7, 7, 7, 7 };
 const int POPO2A[LETTER_MAX]   = { 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4 };
-const int POPO2B[LETTER_MAX]   = { 0, 7, 7, 7, 7, 0, 0, 4, 4, 4, 4, 4, 4, 4 };
+const int POPO2B[LETTER_MAX]   = { 7, 7, 7, 7, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4 };
 
 const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I', 'S', 'T', 'M', 'A', 'S'};
 
 // Globals
 int letterData[LETTER_MAX] = { 0 };
 int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
-int signState = SIGN_POLICE;
+int signState = SIGN_BASIC;
 bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = 0;
@@ -535,16 +539,21 @@ bool (*styleFuncListCrazy[CRAZY_MAX])() = { handleRandomChars,
 void handleSelectMenu()
 {
   static int selection = 0;
+  int colour;
+  int position;
   int menuDelay;
 
   configLED(PWM_MAX, 100, FALSE);
 
   while(signState == SIGN_SELECT)
   {
+    position = selection % LETTER_MAX;
+    colour = BLUE_MASK >> (selection / LETTER_MAX);
+    
     for(menuDelay = 0; menuDelay < SELECT_TIME; menuDelay++)
     {
       basicOff(letterData);
-      letterData[selection] = BLUE_MASK;
+      letterData[position] = colour;
       if(wait(250))
         break;
 
@@ -557,6 +566,7 @@ void handleSelectMenu()
     {
       menuDelay = 0;
       selection++;
+
       if(selection > SIGN_MAX)
         selection = 0;
     }
@@ -639,10 +649,10 @@ bool handleUnderArrest()
 
   configLED(PWM_MAX, 0, FALSE);
 
-  for(index = 0; index < 16; index++)
+  for(index = 0; index < 12; index++)
   {
     // Do red/blue effect
-    for(flashy = 1; flashy < 8; flashy++)
+    for(flashy = 1; flashy < 4; flashy++)
     {
       if(flashy & 0x01)
       {
@@ -658,13 +668,13 @@ bool handleUnderArrest()
         return(TRUE);
     }
 
-    if(wait(100))
+    if(wait(200))
       return(TRUE);
 
     // Do white strobes
-    for(flashy = 0; flashy < 9; flashy++)
+    for(flashy = 0; flashy < 7; flashy++)
     {
-      if(wait(20))
+      if(wait(30))
         return(TRUE);
 
       if(flashColour)
@@ -684,9 +694,11 @@ bool handleUnderArrest()
     }
     flashColour ^= 0x01;
 
-      if(wait(100))
-    return(TRUE);
+    if(wait(200))
+      return(TRUE);
   }
+
+  basicOff(letterData);
   return(FALSE);
 }
 
@@ -781,65 +793,64 @@ void loop()
   {
     switch(signState)
     {
-      case SIGN_SELECT:
+      case SIGN_SELECT:       // Menu
         handleSelectMenu();
         break;
 
-      case SIGN_BASIC:
+      case SIGN_BASIC:        // M
         handleSignBasic();
         break;
 
-      case SIGN_CRAZY:
+      case SIGN_CRAZY:        // E
         handleSignCrazy();
         break;
 
-      case SIGN_COLOUR_CHASE:
+      case SIGN_COLOUR_CHASE: // R
         handleSignColourChase();
         break;
 
-      case SIGN_KNIGHT:
+      case SIGN_KNIGHT:       // R
         handleSignRider();
         break;
 
-      case SIGN_RANDOM_CHARS:
+      case SIGN_RANDOM_CHARS: // Y
         handleRandomChars();
         break;
                         
-      case SIGN_TEST_RED:
+      case SIGN_TEST_RED:     // C
         configLED(PWM_MAX, 0, TRUE);
         styleRedColor(letterData);
         wait(100);
         break;
 
-      case SIGN_TEST_GREEN:
+      case SIGN_TEST_GREEN:    // H
         configLED(PWM_MAX, 0, TRUE);      
         styleGreenColor(letterData);
         wait(100);
         break;
 
-      case SIGN_TEST_BLUE:
+      case SIGN_TEST_BLUE:     // R
         configLED(PWM_MAX, 0, TRUE);      
         styleBlueColor(letterData);
         wait(100);
         break;
 
-      case SIGN_TEST_WHITE:
+      case SIGN_TEST_WHITE:    // I
         configLED(PWM_MAX, 0, TRUE);      
         styleWhiteColor(letterData);
         wait(100);
         break;
       
-      case SIGN_SOLID_ALTERNATE:
+      case SIGN_SOLID_ALTERNATE: // S
         handleSolidAlternate();
         break;
       
-      case SIGN_BREATHE:
+      case SIGN_BREATHE:       // T
         handleSignBreathe();
         break;
       
-      case SIGN_POLICE:
+      case SIGN_POLICE:        // M
         handleUnderArrest();
-        signState = SIGN_BASIC;
         break;
 
       default:
