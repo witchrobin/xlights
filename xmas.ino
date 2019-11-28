@@ -102,6 +102,7 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 #define SIGN_SELECT       99  // Select mode state
 
 #define SELECT_TIME   6    // x500ms
+#define PLAY_MEM      3    // Number of routines to avoid during randomize
 
 #define PWM_MAX       33   // 33 x .3ms = 10ms pwm period
 
@@ -598,13 +599,29 @@ void handleSignBasic()
 
 void handleSignCrazy()
 {
+  static int lastPlayed[PLAY_MEM] = {0};
   int style;
-  configLED(PWM_MAX, 100, FALSE);
-        
-  for(style = 0; style < CRAZY_MAX; style++)
+  int index;
+
+  // Randomize all the cool routines
+  while(1)
   {
+    style = random(0, CRAZY_MAX);
+      
+    for(index = 0; index < PLAY_MEM; index++)
+      if(style == lastPlayed[index])
+        style = 999;
+
+    if(style == 999)
+      continue;
+
     if((*styleFuncListCrazy[style])())
       break;
+
+    for(index = (PLAY_MEM - 1); index > 0; index--)
+      lastPlayed[index] = lastPlayed[index - 1];
+
+    lastPlayed[0] = style;  
   }
 }
 
