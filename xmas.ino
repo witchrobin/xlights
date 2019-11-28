@@ -104,15 +104,17 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 
 // Scenes - Single states          M  E  R  R  Y  C  H  R  I  S  T  M  A  S
 const int CHASE[LETTER_MAX]    = { 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2 };
-const int POPO1[LETTER_MAX]    = { 1, 1, 1, 1, 1, 1, 0, 0, 4, 4, 4, 4, 4, 4 };
-const int POPO2[LETTER_MAX]    = { 4, 4, 4, 4, 4, 4, 0, 0, 1, 1, 1, 1, 1, 1 };
+const int POPO1A[LETTER_MAX]   = { 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
+const int POPO1B[LETTER_MAX]   = { 1, 1, 1, 1, 1, 1, 1, 0, 0, 7, 7, 7, 7, 0 };
+const int POPO2A[LETTER_MAX]   = { 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4 };
+const int POPO2B[LETTER_MAX]   = { 0, 7, 7, 7, 7, 0, 0, 4, 4, 4, 4, 4, 4, 4 };
 
 const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I', 'S', 'T', 'M', 'A', 'S'};
 
 // Globals
 int letterData[LETTER_MAX] = { 0 };
 int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
-int signState = SIGN_BASIC;
+int signState = SIGN_POLICE;
 bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = 0;
@@ -632,21 +634,58 @@ bool handleSignRider()
 bool handleUnderArrest()
 {
   int index;
+  int flashy;
   bool flashColour = 0;
 
-  configLED(PWM_MAX, 50, TRUE);
+  configLED(PWM_MAX, 0, FALSE);
 
-  for(index = 0; index < 2000; index++)
+  for(index = 0; index < 16; index++)
   {
-    if(flashColour)
-      basicConstantLoad(letterData, POPO1);
-    else
-      basicConstantLoad(letterData, POPO2);
-    
+    // Do red/blue effect
+    for(flashy = 1; flashy < 8; flashy++)
+    {
+      if(flashy & 0x01)
+      {
+        if(flashColour)
+          basicConstantLoad(letterData, POPO1A);
+        else
+          basicConstantLoad(letterData, POPO2A);
+      }
+      else
+        basicOff(letterData);
+
+      if(wait(50))
+        return(TRUE);
+    }
+
+    if(wait(100))
+      return(TRUE);
+
+    // Do white strobes
+    for(flashy = 0; flashy < 9; flashy++)
+    {
+      if(wait(20))
+        return(TRUE);
+
+      if(flashColour)
+      {
+        if(flashy & 0x01)
+          basicConstantLoad(letterData, POPO1A);
+        else
+          basicConstantLoad(letterData, POPO1B);
+      }
+      else
+      {
+        if(flashy & 0x01)
+          basicConstantLoad(letterData, POPO2A);
+        else
+          basicConstantLoad(letterData, POPO2B);
+      }
+    }
     flashColour ^= 0x01;
 
-    if(wait(350))
-      return(TRUE);
+      if(wait(100))
+    return(TRUE);
   }
   return(FALSE);
 }
