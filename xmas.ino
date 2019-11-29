@@ -111,6 +111,9 @@ const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, 
 #define BLUE_MASK    0x04
 #define WHITE_MASK   RED_MASK | GREEN_MASK | BLUE_MASK
 
+#define BREATHE_MAX   4
+const int BREATHE_COLOR[BREATHE_MAX] = { 3, 6, 5, 7 };
+
 // Scenes - Single states          M  E  R  R  Y  C  H  R  I  S  T  M  A  S
 const int CHASE[LETTER_MAX]    = { 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2 };
 const int POPO1A[LETTER_MAX]   = { 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
@@ -123,7 +126,7 @@ const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I',
 // Globals
 int letterData[LETTER_MAX] = { 0 };
 int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
-int signState = SIGN_BASIC;
+int signState = SIGN_CRAZY;
 bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = 0;
@@ -204,7 +207,6 @@ void handleFade()
     Serial.print((String)"\033[1;37m <<<\033[39D");
   }
 #else
-
   //Process LED fade effect
     if(millis() - fadeTime >= ((fadeSpeed < PWM_MAX ? PWM_MAX : fadeSpeed) / brightMax))
     {
@@ -633,7 +635,7 @@ bool handleSignColourChase()
   configLED(PWM_MAX, 400, FALSE);
         
   basicConstantLoad(letterData, CHASE);
-  for(index = 0; index < 21; index++)
+  for(index = 0; index < 30; index++)
   {
     saved = shiftRight(letterData, saved);
     if(wait(400))
@@ -650,7 +652,7 @@ bool handleSignRider()
 
   styleRedColor(letterData);
   letterData[0] = GREEN_MASK;
-  for(repeat = 0; repeat < 5; repeat++)
+  for(repeat = 0; repeat < 4; repeat++)
   {
     for(index = 0; index < 26; index++)
     {
@@ -789,10 +791,10 @@ bool handleSignBreathe()
   configLED(PWM_MAX, 150, FALSE);
   basicOff(letterData);
 
-  for(loop = 1; loop < 8; loop++)
+  for(loop = 0; loop < BREATHE_MAX; loop++)
   {
-    letterData[6] = loop;
-    letterData[7] = loop;
+    letterData[6] = BREATHE_COLOR[loop];
+    letterData[7] = BREATHE_COLOR[loop];
         
     for(style = 0; style < 13; style++)
     {
