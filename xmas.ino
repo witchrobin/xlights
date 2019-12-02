@@ -88,7 +88,7 @@ const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 #define SIGN_RANDOM_CHARS 4   // Demo of random characters
 #define SIGN_SOLID_ALTERNATE 5
 #define SIGN_BREATHE      6
-#define SIGN_POLICE       7
+#define SIGN_STACK        7
 #define SIGN_NEW1         8
 #define SIGN_NEW2         9
 #define SIGN_NEW3         10
@@ -724,66 +724,98 @@ bool handleSignRider()
   return(FALSE);
 }
 
-bool handleUnderArrest()
+bool handleStack()
 {
   int index;
-  int flashy;
-  bool flashColour = 0;
+  int shift;
+  
+  configLED(PWM_MAX, 0, FALSE, LETTER_MAX);  
+  basicOff(letterData);
+  if(wait(300))
+    return(TRUE);
 
-  configLED(PWM_MAX, 0, FALSE, LETTER_MAX);
-
-  for(index = 0; index < 12; index++)
+  for(index = 0; index < LETTER_MAX; index++)
   {
-    // Do red/blue effect
-    for(flashy = 1; flashy < 4; flashy++)
-    {
-      if(flashy & 0x01)
-      {
-        if(flashColour)
-          basicConstantLoad(letterData, POPO1A);
-        else
-          basicConstantLoad(letterData, POPO2A);
-      }
-      else
-        basicOff(letterData);
-
-      if(wait(50))
-        return(TRUE);
-    }
-
-    if(wait(200))
+    letterData[0] = WHITE_MASK;
+    
+    if(wait(20))
       return(TRUE);
 
-    // Do white strobes
-    for(flashy = 0; flashy < 7; flashy++)
+    for(shift = 0; shift < (LETTER_MAX - index - 1); shift++)
     {
-      if(wait(30))
+      letterData[shift + 1] = letterData[shift];
+      letterData[shift] = 0;
+      if(wait(20))
         return(TRUE);
-
-      if(flashColour)
-      {
-        if(flashy & 0x01)
-          basicConstantLoad(letterData, POPO1A);
-        else
-          basicConstantLoad(letterData, POPO1B);
-      }
-      else
-      {
-        if(flashy & 0x01)
-          basicConstantLoad(letterData, POPO2A);
-        else
-          basicConstantLoad(letterData, POPO2B);
-      }
     }
-    flashColour ^= 0x01;
-
-    if(wait(200))
-      return(TRUE);
   }
 
-  basicOff(letterData);
+  if(wait(300))
+    return(TRUE);
+
+  for(index = LETTER_MAX - 1; index >= 0; index--)
+  {
+    letterData[LETTER_MAX - 1] = 0;
+    if(wait(20))
+      return(TRUE);
+
+    for(shift = index; shift < LETTER_MAX - 1; shift++)
+    {
+      letterData[shift + 1] = letterData[shift];
+      letterData[shift] = 0;
+      if(wait(20))
+        return(TRUE);
+    }
+  }
+
+  letterData[LETTER_MAX - 1] = 0;
+  wait(300);
   return(FALSE);
 }
+/*
+        for(i = 0; i < LETTER_MAX; i++)
+        {
+          letterData[i] = 0;
+        }
+        updateLetters();
+        delay(300);
+
+        for(j = 0; j < LETTER_MAX; j++)
+        {
+          letterData[0] = 7;
+          updateLetters();
+          delay(FANCY_DEL);
+
+          for(i = 0; i < LETTER_MAX - j - 1; i++)
+          { 
+            letterData[i + 1] = letterData[i];
+            letterData[i] = 0;
+            updateLetters();
+            delay(FANCY_DEL);
+          }
+        }
+        delay(300);
+        
+        for(j = LETTER_MAX - 1; j >= 0; j--)
+        {
+          letterData[LETTER_MAX - 1] = 0;
+          updateLetters();
+          delay(FANCY_DEL);
+
+          for(i = j; i < LETTER_MAX - 1; i++)
+          { 
+            letterData[i + 1] = letterData[i];
+            letterData[i] = 0;
+            updateLetters();
+            delay(FANCY_DEL);
+          }
+        }
+
+        letterData[LETTER_MAX - 1] = 0;
+        updateLetters();
+        delay(300);
+        break;
+        */
 
 bool handleRandomChars()
 {
@@ -909,8 +941,8 @@ void loop()
         handleSignBreathe();
         break;
       
-      case SIGN_POLICE:        // R
-        handleUnderArrest();
+      case SIGN_STACK:         // R
+        handleStack();
         break;
 
 // Green Level
