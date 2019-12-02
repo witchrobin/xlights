@@ -58,19 +58,21 @@
 #define S1R 58
 #define S1G 57
 
-#define AUX1 56
-#define AUX2 55
-#define AUX3 54
+#define STB 55
+#define STR 54
+#define STG 56
 
 #define MODE_BUTTON 53
 
 #define LETTER_MAX  14
 #define COLOUR_MAX  3
-#define MERRY_MAX 5
+#define MERRY_MAX   5
 
-const int LETTER_MAP[LETTER_MAX][3] = { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, R0G, R0B}, {R1R, R1G, R1B}, {Y0R, Y0G, Y0B},
-                                        {C0R, C0G, C0B}, {H0R, H0G, H0B}, {R2R, R2G, R2B}, {I0R, I0G, I0B}, {S0R, S0G, S0B},
-                                        {T0R, T0G, T0B}, {M1R, M1G, M1B}, {A0R, A0G, A0B}, {S1R, S1G, S1B} };
+const int LETTER_MAP[LETTER_MAX][COLOUR_MAX] =  { {M0R, M0G, M0B}, {E0R, E0G, E0B}, {R0R, R0G, R0B}, {R1R, R1G, R1B}, {Y0R, Y0G, Y0B},
+                                                  {C0R, C0G, C0B}, {H0R, H0G, H0B}, {R2R, R2G, R2B}, {I0R, I0G, I0B}, {S0R, S0G, S0B},
+                                                  {T0R, T0G, T0B}, {M1R, M1G, M1B}, {A0R, A0G, A0B}, {S1R, S1G, S1B} };
+
+const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 
 #define FALSE 0
 #define TRUE  1
@@ -125,13 +127,16 @@ const char DEBUG_MSG[LETTER_MAX] = {'M', 'E', 'R', 'R', 'Y', 'C', 'H', 'R', 'I',
 
 // Globals
 int letterData[LETTER_MAX] = { 0 };
+int starData = 0;
 int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
+int pwmStar[COLOUR_MAX] = { 0 };
 int signState = SIGN_CRAZY;
 bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = 0;
 bool instantOn = FALSE;
 int selection = 0;
+int starFollow = 0;
 
 void setup()
 {
@@ -148,12 +153,11 @@ void setup()
         digitalWrite(LETTER_MAP[index][colour], LOW);
       }
 
-    pinMode(AUX1, OUTPUT);
-    pinMode(AUX2, OUTPUT);
-    pinMode(AUX3, OUTPUT);
-    digitalWrite(AUX1, HIGH);
-    digitalWrite(AUX2, HIGH);
-    digitalWrite(AUX3, HIGH);
+    for(colour = 0; colour < COLOUR_MAX; colour++)
+    {
+      pinMode(STAR_MAP[colour], OUTPUT);
+      digitalWrite(STAR_MAP[colour], LOW);
+    }
   #endif
 
   pinMode(MODE_BUTTON, INPUT);
@@ -176,12 +180,16 @@ void handlePWM()
      for(index = 0; index < LETTER_MAX; index++)
       for(colour = 0; colour < COLOUR_MAX; colour++)
         digitalWrite(LETTER_MAP[index][colour], pwmData[index][colour] > pwm);
+
+    for(colour = 0; colour < COLOUR_MAX; colour++)
+      digitalWrite(STAR_MAP[colour], pwmStar[colour] > pwm);        
 #endif
 }
 
 void handleFade()
 {
   static int letterMem[LETTER_MAX] = { 0 };
+  static int starMem = 0;
   static unsigned long fadeTime = millis();
   int colour = 0;
   int index;
@@ -207,54 +215,102 @@ void handleFade()
     Serial.print((String)"\033[1;37m <<<\033[39D");
   }
 #else
-  //Process LED fade effect
-    if(millis() - fadeTime >= ((fadeSpeed < PWM_MAX ? PWM_MAX : fadeSpeed) / brightMax))
-    {
-      fadeTime = millis();
-      
-      for(index = 0; index < LETTER_MAX; index++)
-        for(colour = 0; colour < COLOUR_MAX; colour++)
-        {
-          // Check if letter-colour is requested on
-          if(letterData[index] & (1 << colour))
-          {
-            // Check if already on
-            if(letterMem[index] & (1 << colour))
-              pwmData[index][colour] = brightMax;
+  // Process LED fade effect
+  if(millis() - fadeTime >= ((fadeSpeed < PWM_MAX ? PWM_MAX : fadeSpeed) / brightMax))
+  {
+    fadeTime = millis();
 
-            // Fade up this letter-colour
-            else
-            {
-              if(pwmData[index][colour] < brightMax)
-              {
-                if(instantOn)
-                  pwmData[index][colour] = PWM_MAX;
-                else
-                  pwmData[index][colour]++;
-              }
-              if(pwmData[index][colour] == brightMax)
-                letterMem[index] |= (1 << colour);
-            }
-          }
-          
-          // This letter-colour is requested off
+    // Update star follow data
+    if(starFollow < LETTER_MAX)
+      starData = letterData[starFollow];
+    else
+      starData = 0;
+    
+    for(index = 0; index < LETTER_MAX; index++)
+      for(colour = 0; colour < COLOUR_MAX; colour++)
+      {
+        // Check if letter-colour is requested on
+        if(letterData[index] & (1 << colour))
+        {
+          // Check if already on
+          if(letterMem[index] & (1 << colour))
+            pwmData[index][colour] = brightMax;
+
+          // Fade up this letter-colour
           else
           {
-            // Check if already off
-            if(!(letterMem[index] & (1 << colour)))
-              pwmData[index][colour] = 0;
-
-            // Fade down this letter-colour
-            else
+            if(pwmData[index][colour] < brightMax)
             {
-              if(pwmData[index][colour] > 0)
-                pwmData[index][colour]--;
-              if(pwmData[index][colour] == 0)
-                letterMem[index] &= ~(1 << colour);
+              if(instantOn)
+                pwmData[index][colour] = PWM_MAX;
+              else
+                pwmData[index][colour]++;
             }
+            if(pwmData[index][colour] == brightMax)
+              letterMem[index] |= (1 << colour);
           }
         }
+          
+        // This letter-colour is requested off
+        else
+        {
+          // Check if already off
+          if(!(letterMem[index] & (1 << colour)))
+            pwmData[index][colour] = 0;
+
+          // Fade down this letter-colour
+          else
+          {
+            if(pwmData[index][colour] > 0)
+              pwmData[index][colour]--;
+            if(pwmData[index][colour] == 0)
+              letterMem[index] &= ~(1 << colour);
+          }
+        }
+      }
+
+    for(colour = 0; colour < COLOUR_MAX; colour++)
+    {
+      // Check if star colour is requested on
+      if(starData & (1 << colour))
+      {
+        // Check if already on
+        if(starMem & (1 << colour))
+          pwmStar[colour] = brightMax;
+
+        // Fade up this letter-colour
+        else
+        {
+          if(pwmStar[colour] < brightMax)
+          {
+            if(instantOn)
+              pwmStar[colour] = PWM_MAX;
+            else
+              pwmStar[colour]++;
+          }
+          if(pwmStar[colour] == brightMax)
+            starMem |= (1 << colour);
+          }
+        }
+          
+      // This star colour is requested off
+      else
+      {
+        // Check if already off
+        if(!(starMem & (1 << colour)))
+            pwmStar[colour] = 0;
+
+        // Fade down this letter-colour
+        else
+        {
+          if(pwmStar[colour] > 0)
+            pwmStar[colour]--;
+          if(pwmStar[colour] == 0)
+            starMem &= ~(1 << colour);
+        }
+      }
     }
+  }
 #endif
 }
 
@@ -345,15 +401,15 @@ bool handleModeButton()
   return(FALSE);
 }
 
-void configLED(int bright, int speed, bool instant)
+void configLED(int bright, int speed, bool instant, int follow)
 { 
   brightMax = bright;   // Set maximum brightness threshold
   fadeSpeed = speed;    // Set the LED fade speed (ms to fade)
   instantOn = instant;  // Set instant on instead of fade on
+  starFollow = follow;  // Set the letter that the star should copy
 }
 
 // basic styles
-
 void basicOff(int *data)
 {
   int i;
@@ -554,7 +610,7 @@ void handleSelectMenu()
   int position;
   int menuDelay;
 
-  configLED(PWM_MAX, 100, FALSE);
+  configLED(PWM_MAX, 100, FALSE, LETTER_MAX);
 
   while(signState == SIGN_SELECT)
   {
@@ -589,8 +645,8 @@ void handleSelectMenu()
 void handleSignBasic()
 {
   int style;
-  configLED(PWM_MAX, 3000, FALSE);
-       
+  configLED(PWM_MAX, 3000, FALSE, 0);
+
   for(style = 0; style < BASIC_MAX; style++)
   {
     (*styleFuncListBasic[style])(letterData);
@@ -632,7 +688,7 @@ bool handleSignColourChase()
   int saved = BLUE_MASK;
   int index;
 
-  configLED(PWM_MAX, 400, FALSE);
+  configLED(PWM_MAX, 400, FALSE, 2);
         
   basicConstantLoad(letterData, CHASE);
   for(index = 0; index < 30; index++)
@@ -648,7 +704,7 @@ bool handleSignRider()
 {
   int index;
   int repeat;
-  configLED(PWM_MAX, 600, TRUE);
+  configLED(PWM_MAX, 600, TRUE, 6);
 
   styleRedColor(letterData);
   letterData[0] = GREEN_MASK;
@@ -674,7 +730,7 @@ bool handleUnderArrest()
   int flashy;
   bool flashColour = 0;
 
-  configLED(PWM_MAX, 0, FALSE);
+  configLED(PWM_MAX, 0, FALSE, LETTER_MAX);
 
   for(index = 0; index < 12; index++)
   {
@@ -736,7 +792,7 @@ bool handleRandomChars()
   int count;
   int pos[LETTER_MAX];
 
-  configLED(PWM_MAX, 1000, FALSE);
+  configLED(PWM_MAX, 1000, FALSE, 0);
   basicOff(letterData);
   randomizeArray(pos, LETTER_MAX);
   
@@ -772,7 +828,7 @@ bool handleRandomChars()
 bool handleSolidAlternate()
 {
   int style;
-  configLED(PWM_MAX, 3500, FALSE);
+  configLED(PWM_MAX, 3500, FALSE, 0);
        
   for(style = 0; style < SOLID_MAX; style++)
   {
@@ -788,7 +844,7 @@ bool handleSignBreathe()
   int style;
   int loop;
 
-  configLED(PWM_MAX, 150, FALSE);
+  configLED(PWM_MAX, 150, FALSE, 6);
   basicOff(letterData);
 
   for(loop = 0; loop < BREATHE_MAX; loop++)
@@ -859,25 +915,25 @@ void loop()
 
 // Green Level
       case SIGN_TEST_RED:     // M
-        configLED(PWM_MAX, 0, TRUE);
+        configLED(PWM_MAX, 0, TRUE, 0);
         styleRedColor(letterData);
         wait(100);
         break;
 
       case SIGN_TEST_GREEN:    // E
-        configLED(PWM_MAX, 0, TRUE);      
+        configLED(PWM_MAX, 0, TRUE, 0);      
         styleGreenColor(letterData);
         wait(100);
         break;
 
       case SIGN_TEST_BLUE:     // R
-        configLED(PWM_MAX, 0, TRUE);      
+        configLED(PWM_MAX, 0, TRUE, 0);      
         styleBlueColor(letterData);
         wait(100);
         break;
 
       case SIGN_TEST_WHITE:    // R
-        configLED(PWM_MAX, 0, TRUE);      
+        configLED(PWM_MAX, 0, TRUE, 0);      
         styleWhiteColor(letterData);
         wait(100);
         break;
