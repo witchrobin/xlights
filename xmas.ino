@@ -89,12 +89,13 @@ const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 #define SIGN_SOLID_ALTERNATE 5
 #define SIGN_BREATHE      6
 #define SIGN_STACK        7
-#define SIGN_NEW1         8
-#define SIGN_NEW2         9
-#define SIGN_NEW3         10
-#define SIGN_NEW4         11
-#define SIGN_NEW5         12
-#define SIGN_NEW6         13
+#define SIGN_COLOUR_PUKE  8
+#define SIGN_NEW1         9
+#define SIGN_NEW2         10
+#define SIGN_NEW3         11
+#define SIGN_NEW4         12
+#define SIGN_NEW5         13
+
 // Green Level
 #define SIGN_TEST_RED     14   // Test of solid red
 #define SIGN_TEST_GREEN   15   // Test of solid green
@@ -596,13 +597,14 @@ void (*styleFuncListSolid[SOLID_MAX])(int *) = { styleRedColor,
                                                  styleWhiteColor
                                                };
 
-#define RANDOMIZE_MAX 6
+#define RANDOMIZE_MAX 7
 bool (*styleFuncListRandom[RANDOMIZE_MAX])() = { handleRandomChars,
                                                  handleSignRider,
                                                  handleSignColourChase,
                                                  handleSolidAlternate,
                                                  handleSignBreathe,
-                                                 handleSignStack
+                                                 handleSignStack,
+                                                 handleSignColourPuke
                                                };
 
 void handleSelectMenu()
@@ -871,6 +873,40 @@ bool handleSignBreathe()
   return(FALSE);
 }
 
+bool handleSignColourPuke()
+{
+  int index;
+  int loop;
+  int colour = 0;
+
+  configLED(PWM_MAX, 50, FALSE, 6);
+  basicOff(letterData);
+
+  for(loop = 0; loop < 30; loop++)
+  {
+    do
+    {
+      colour = random(1, 8);
+    }
+    while(letterData[0] == colour);
+    
+    letterData[6] = colour;
+    letterData[7] = colour;
+        
+    for(index = 0; index < 6; index++)
+    {
+      if(wait(30))
+        return(TRUE);
+            
+      breatheOut(letterData);
+    }
+
+    if(wait(100))
+      return(TRUE);
+  }
+  return(FALSE);
+}
+
 void loop()
 {
   if(signActive)
@@ -914,6 +950,10 @@ void loop()
         handleSignStack();
         break;
 
+      case SIGN_COLOUR_PUKE:   // I
+        handleSignColourPuke();
+        break;
+
 // Green Level
       case SIGN_TEST_RED:      // M
         configLED(PWM_MAX, 0, TRUE, 0);
@@ -944,7 +984,7 @@ void loop()
       case SIGN_NEW3: 
       case SIGN_NEW4: 
       case SIGN_NEW5: 
-      case SIGN_NEW6:                               
+                       
       default:
         basicOff(letterData);
         wait(100);
