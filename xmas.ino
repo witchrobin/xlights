@@ -735,7 +735,7 @@ bool handleSignStack()
   int time;
   int colourData[LETTER_MAX];
 
-  configLED(PWM_MAX, 0, FALSE, 0);  
+  configLED(PWM_MAX, 50, TRUE, 0);  
   basicAlternateColor(colourData, RED_MASK, GREEN_MASK);
   basicOff(letterData);
 
@@ -755,13 +755,19 @@ bool handleSignStack()
       letterData[shift + 1] = letterData[shift];
       letterData[shift] = 0;
     }
+
     letterData[LETTER_MAX - index - 1] = colourData[LETTER_MAX - index - 1];
 
     if(wait(200))
       return(TRUE);
   }
 
-  if(wait(700))
+  if(wait(400))
+    return(TRUE);
+
+  configLED(PWM_MAX, 50, TRUE, LETTER_MAX - 1);  
+
+  if(wait(400))
     return(TRUE);
 
   for(index = LETTER_MAX - 1; index >= 0; index--)
@@ -899,6 +905,9 @@ bool handleSignColourPuke()
             
       breatheOut(letterData);
     }
+    
+    if(wait(50))
+      return(TRUE);
   }
   return(FALSE);
 }
@@ -940,6 +949,7 @@ bool handleSignOverlap()
     letterData[pos2] &= ~colour2;
   }
 
+  wait(150);
   return(FALSE);
 }
 
