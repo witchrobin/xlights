@@ -81,8 +81,9 @@ const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 #define BUTTON_LONG  1000     // 1s to detect long button press
 
 // Blue Level
-#define SIGN_BASIC        0   // This will be the basic, non-seizure inducing sequence
-#define SIGN_RANDOMIZE    1   // This will be a much more dazzling display of capabilities
+#define SIGN_START_MENU   0
+#define SIGN_RANDOMIZE    0   // This will be a much more dazzling display of capabilities
+#define SIGN_BASIC        1   // This will be the basic, non-seizure inducing sequence for Nishat
 #define SIGN_COLOUR_CHASE 2   // Demo of chase
 #define SIGN_KNIGHT       3   // Demo of Knight Rider
 #define SIGN_RANDOM_CHARS 4   // Demo of random characters
@@ -642,7 +643,7 @@ void handleSelectMenu()
         selection = 0;
     }
     else
-      signState = SIGN_BASIC + selection;
+      signState = SIGN_START_MENU + selection;
   }
 }
 
@@ -964,14 +965,14 @@ void loop()
         break;
 
 // Blue Level
-      case SIGN_BASIC:        // M
-        handleSignBasic();
-        break;
-
-      case SIGN_RANDOMIZE:    // E
+      case SIGN_RANDOMIZE:    // M
         handleSignRandomize();
         break;
 
+      case SIGN_BASIC:        // E
+        handleSignBasic();
+        break;
+        
       case SIGN_COLOUR_CHASE: // R
         handleSignColourChase();
         break;
