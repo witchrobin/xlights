@@ -82,7 +82,7 @@ const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 
 // Blue Level
 #define SIGN_BASIC        0   // This will be the basic, non-seizure inducing sequence
-#define SIGN_CRAZY        1   // This will be a much more dazzling display of capabilities
+#define SIGN_RANDOMIZE    1   // This will be a much more dazzling display of capabilities
 #define SIGN_COLOUR_CHASE 2   // Demo of chase
 #define SIGN_KNIGHT       3   // Demo of Knight Rider
 #define SIGN_RANDOM_CHARS 4   // Demo of random characters
@@ -130,7 +130,7 @@ int letterData[LETTER_MAX] = { 0 };
 int starData = 0;
 int pwmData[LETTER_MAX][COLOUR_MAX] = { 0 };
 int pwmStar[COLOUR_MAX] = { 0 };
-int signState = SIGN_CRAZY;
+int signState = SIGN_RANDOMIZE;
 bool signActive = TRUE;
 int brightMax = PWM_MAX;
 int fadeSpeed = 0;
@@ -582,12 +582,12 @@ void styleWhiteColor(int *data)
 
 #define BASIC_MAX 6
 void (*styleFuncListBasic[BASIC_MAX])(int *) = { styleRedColor,
-                                            styleGreenColor,
-                                            styleAltWordRedGreen,
-                                            styleAltWordGreenRed,
-                                            styleAlternateRedGreen,
-                                            styleAlternateGreenRed
-                                    };
+                                                 styleGreenColor,
+                                                 styleAltWordRedGreen,
+                                                 styleAltWordGreenRed,
+                                                 styleAlternateRedGreen,
+                                                 styleAlternateGreenRed
+                                               };
 
 #define SOLID_MAX 4
 void (*styleFuncListSolid[SOLID_MAX])(int *) = { styleRedColor,
@@ -596,14 +596,14 @@ void (*styleFuncListSolid[SOLID_MAX])(int *) = { styleRedColor,
                                                  styleWhiteColor
                                                };
 
-#define CRAZY_MAX 6
-bool (*styleFuncListCrazy[CRAZY_MAX])() = { handleRandomChars,
-                                            handleSignRider,
-                                            handleSignColourChase,
-                                            handleSolidAlternate,
-                                            handleSignBreathe,
-                                            handleSignStack
-                                    };
+#define RANDOMIZE_MAX 6
+bool (*styleFuncListRandom[RANDOMIZE_MAX])() = { handleRandomChars,
+                                                 handleSignRider,
+                                                 handleSignColourChase,
+                                                 handleSolidAlternate,
+                                                 handleSignBreathe,
+                                                 handleSignStack
+                                               };
 
 void handleSelectMenu()
 {
@@ -656,7 +656,7 @@ void handleSignBasic()
   }
 }
 
-void handleSignCrazy()
+void handleSignRandomize()
 {
   static int lastPlayed[PLAY_MEM] = {0};
   int style;
@@ -665,7 +665,7 @@ void handleSignCrazy()
   // Randomize all the cool routines
   while(1)
   {
-    style = random(0, CRAZY_MAX);
+    style = random(0, RANDOMIZE_MAX);
       
     for(index = 0; index < PLAY_MEM; index++)
       if(style == lastPlayed[index])
@@ -674,7 +674,7 @@ void handleSignCrazy()
     if(style == 999)
       continue;
 
-    if((*styleFuncListCrazy[style])())
+    if((*styleFuncListRandom[style])())
       break;
 
     for(index = (PLAY_MEM - 1); index > 0; index--)
@@ -733,7 +733,8 @@ bool handleSignStack()
   int colourData[LETTER_MAX];
 
   configLED(PWM_MAX, 0, FALSE, 0);  
-  basicConstantLoad(colourData, CHASE);
+//  basicConstantLoad(colourData, CHASE);
+  basicAlternateColor(colourData, RED_MASK, GREEN_MASK);
   basicOff(letterData);
 
   if(wait(300))
@@ -885,8 +886,8 @@ void loop()
         handleSignBasic();
         break;
 
-      case SIGN_CRAZY:        // E
-        handleSignCrazy();
+      case SIGN_RANDOMIZE:        // E
+        handleSignRandomize();
         break;
 
       case SIGN_COLOUR_CHASE: // R
