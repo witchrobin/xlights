@@ -90,11 +90,11 @@ const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 #define SIGN_BREATHE      6
 #define SIGN_STACK        7
 #define SIGN_COLOUR_PUKE  8
-#define SIGN_NEW1         9
-#define SIGN_NEW2         10
-#define SIGN_NEW3         11
-#define SIGN_NEW4         12
-#define SIGN_NEW5         13
+#define SIGN_OVERLAP      9
+#define SIGN_NEW1         10
+#define SIGN_NEW2         11
+#define SIGN_NEW3         12
+#define SIGN_NEW4         13
 
 // Green Level
 #define SIGN_TEST_RED     14   // Test of solid red
@@ -597,14 +597,15 @@ void (*styleFuncListSolid[SOLID_MAX])(int *) = { styleRedColor,
                                                  styleWhiteColor
                                                };
 
-#define RANDOMIZE_MAX 7
+#define RANDOMIZE_MAX 8
 bool (*styleFuncListRandom[RANDOMIZE_MAX])() = { handleRandomChars,
                                                  handleSignRider,
                                                  handleSignColourChase,
                                                  handleSolidAlternate,
                                                  handleSignBreathe,
                                                  handleSignStack,
-                                                 handleSignColourPuke
+                                                 handleSignColourPuke,
+                                                 handleSignOverlap
                                                };
 
 void handleSelectMenu()
@@ -735,7 +736,6 @@ bool handleSignStack()
   int colourData[LETTER_MAX];
 
   configLED(PWM_MAX, 0, FALSE, 0);  
-//  basicConstantLoad(colourData, CHASE);
   basicAlternateColor(colourData, RED_MASK, GREEN_MASK);
   basicOff(letterData);
 
@@ -880,7 +880,6 @@ bool handleSignColourPuke()
   int colour = 0;
 
   configLED(PWM_MAX, 50, FALSE, 6);
-  basicOff(letterData);
 
   for(loop = 0; loop < 30; loop++)
   {
@@ -895,15 +894,52 @@ bool handleSignColourPuke()
         
     for(index = 0; index < 6; index++)
     {
-      if(wait(30))
+      if(wait(50))
         return(TRUE);
             
       breatheOut(letterData);
     }
-
-    if(wait(100))
-      return(TRUE);
   }
+  return(FALSE);
+}
+
+bool handleSignOverlap()
+{
+  int pos1;
+  int pos2;
+  int colour1;
+  int colour2;
+
+  configLED(PWM_MAX, 150, FALSE, 0);
+  basicOff(letterData);
+
+  colour1 = random(1, 7);
+  do
+  {
+    colour2 = random(1, 7);
+  } while (colour1 & colour2);
+  
+  for(pos1 = 0, pos2 = LETTER_MAX - 1; pos1 < LETTER_MAX; pos1++, pos2--)
+  {
+    if(wait(150))
+        return(TRUE);
+    
+    letterData[pos1] |= colour1;
+    letterData[pos2] |= colour2;
+  }
+
+  if(wait(700))
+    return(TRUE);
+
+  for(pos1 = 0, pos2 = LETTER_MAX - 1; pos1 < LETTER_MAX; pos1++, pos2--)
+  {
+    if(wait(150))
+        return(TRUE);
+    
+    letterData[pos1] &= ~colour1;
+    letterData[pos2] &= ~colour2;
+  }
+
   return(FALSE);
 }
 
@@ -922,7 +958,7 @@ void loop()
         handleSignBasic();
         break;
 
-      case SIGN_RANDOMIZE:        // E
+      case SIGN_RANDOMIZE:    // E
         handleSignRandomize();
         break;
 
@@ -954,6 +990,10 @@ void loop()
         handleSignColourPuke();
         break;
 
+      case SIGN_OVERLAP:       // S
+        handleSignOverlap();
+        break;
+
 // Green Level
       case SIGN_TEST_RED:      // M
         configLED(PWM_MAX, 0, TRUE, 0);
@@ -983,7 +1023,6 @@ void loop()
       case SIGN_NEW2: 
       case SIGN_NEW3: 
       case SIGN_NEW4: 
-      case SIGN_NEW5: 
                        
       default:
         basicOff(letterData);
