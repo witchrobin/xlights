@@ -596,12 +596,13 @@ void (*styleFuncListSolid[SOLID_MAX])(int *) = { styleRedColor,
                                                  styleWhiteColor
                                                };
 
-#define CRAZY_MAX 5
+#define CRAZY_MAX 6
 bool (*styleFuncListCrazy[CRAZY_MAX])() = { handleRandomChars,
                                             handleSignRider,
                                             handleSignColourChase,
                                             handleSolidAlternate,
-                                            handleSignBreathe
+                                            handleSignBreathe,
+                                            handleSignStack
                                     };
 
 void handleSelectMenu()
@@ -724,98 +725,65 @@ bool handleSignRider()
   return(FALSE);
 }
 
-bool handleStack()
+bool handleSignStack()
 {
   int index;
   int shift;
-  
-  configLED(PWM_MAX, 0, FALSE, LETTER_MAX);  
+  int time;
+  int colourData[LETTER_MAX];
+
+  configLED(PWM_MAX, 0, FALSE, 0);  
+  basicConstantLoad(colourData, CHASE);
   basicOff(letterData);
+
   if(wait(300))
     return(TRUE);
 
   for(index = 0; index < LETTER_MAX; index++)
   {
+    time = 250 / (LETTER_MAX - index);
     letterData[0] = WHITE_MASK;
-    
-    if(wait(20))
-      return(TRUE);
 
     for(shift = 0; shift < (LETTER_MAX - index - 1); shift++)
     {
+      if(wait(time))
+        return(TRUE);
+
       letterData[shift + 1] = letterData[shift];
       letterData[shift] = 0;
-      if(wait(20))
-        return(TRUE);
     }
+    letterData[LETTER_MAX - index - 1] = colourData[LETTER_MAX - index - 1];
+
+    if(wait(200))
+      return(TRUE);
   }
 
-  if(wait(300))
+  if(wait(700))
     return(TRUE);
 
   for(index = LETTER_MAX - 1; index >= 0; index--)
   {
-    letterData[LETTER_MAX - 1] = 0;
-    if(wait(20))
-      return(TRUE);
+    time = 250 / (LETTER_MAX - index);
+    letterData[index] = WHITE_MASK;
 
     for(shift = index; shift < LETTER_MAX - 1; shift++)
     {
       letterData[shift + 1] = letterData[shift];
       letterData[shift] = 0;
-      if(wait(20))
+
+      if(wait(time))
         return(TRUE);
     }
+    letterData[LETTER_MAX - 1] = 0;
+
+    if(wait(200))
+      return(TRUE);
   }
 
   letterData[LETTER_MAX - 1] = 0;
   wait(300);
   return(FALSE);
 }
-/*
-        for(i = 0; i < LETTER_MAX; i++)
-        {
-          letterData[i] = 0;
-        }
-        updateLetters();
-        delay(300);
-
-        for(j = 0; j < LETTER_MAX; j++)
-        {
-          letterData[0] = 7;
-          updateLetters();
-          delay(FANCY_DEL);
-
-          for(i = 0; i < LETTER_MAX - j - 1; i++)
-          { 
-            letterData[i + 1] = letterData[i];
-            letterData[i] = 0;
-            updateLetters();
-            delay(FANCY_DEL);
-          }
-        }
-        delay(300);
-        
-        for(j = LETTER_MAX - 1; j >= 0; j--)
-        {
-          letterData[LETTER_MAX - 1] = 0;
-          updateLetters();
-          delay(FANCY_DEL);
-
-          for(i = j; i < LETTER_MAX - 1; i++)
-          { 
-            letterData[i + 1] = letterData[i];
-            letterData[i] = 0;
-            updateLetters();
-            delay(FANCY_DEL);
-          }
-        }
-
-        letterData[LETTER_MAX - 1] = 0;
-        updateLetters();
-        delay(300);
-        break;
-        */
 
 bool handleRandomChars()
 {
@@ -942,11 +910,11 @@ void loop()
         break;
       
       case SIGN_STACK:         // R
-        handleStack();
+        handleSignStack();
         break;
 
 // Green Level
-      case SIGN_TEST_RED:     // M
+      case SIGN_TEST_RED:      // M
         configLED(PWM_MAX, 0, TRUE, 0);
         styleRedColor(letterData);
         wait(100);
