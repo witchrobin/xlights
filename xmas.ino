@@ -961,13 +961,13 @@ bool handleSignLetterChase()
 {
   int index;
 
-  configLED(PWM_MAX, 100, TRUE, 0);
+  configLED(PWM_MAX, 200, TRUE, 0);
   basicOff(letterData);
 
-  for(index = 0; index < 100; index ++)
+  for(index = 0; index < (LET_CH_MAX * 6); index ++)
   {
     rotateRight(letterData);
-    letterData[0] = LETTER_CHASE_COLOUR[index % 15];
+    letterData[0] = LETTER_CHASE_COLOUR[index % LET_CH_MAX];
 
     if(wait(100))
       return(TRUE);
