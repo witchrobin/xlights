@@ -141,6 +141,7 @@ int fadeSpeed = 0;
 bool instantOn = FALSE;
 int selection = 0;
 int starFollow = 0;
+int starOverride = 0;
 
 void setup()
 {
@@ -225,11 +226,13 @@ void handleFade()
     fadeTime = millis();
 
     // Update star follow data
-    if(starFollow < LETTER_MAX)
+    if(starOverride)
+      starData = starOverride;
+    else if(starFollow < LETTER_MAX)
       starData = letterData[starFollow];
     else
       starData = 0;
-    
+
     for(index = 0; index < LETTER_MAX; index++)
       for(colour = 0; colour < COLOUR_MAX; colour++)
       {
@@ -405,12 +408,13 @@ bool handleModeButton()
   return(FALSE);
 }
 
-void configLED(int bright, int speed, bool instant, int follow)
+void configLED(int bright, int speed, bool instant, int follow, int force)
 { 
   brightMax = bright;   // Set maximum brightness threshold
   fadeSpeed = speed;    // Set the LED fade speed (ms to fade)
   instantOn = instant;  // Set instant on instead of fade on
   starFollow = follow;  // Set the letter that the star should copy
+  starOverride = force; // Force the star to a specific colour
 }
 
 // basic styles
@@ -619,7 +623,7 @@ void handleSelectMenu()
   int position;
   int menuDelay;
 
-  configLED(PWM_MAX, 100, FALSE, LETTER_MAX);
+  configLED(PWM_MAX, 100, FALSE, LETTER_MAX, 0);
 
   while(signState == SIGN_SELECT)
   {
@@ -654,7 +658,7 @@ void handleSelectMenu()
 void handleSignBasic()
 {
   int style;
-  configLED(PWM_MAX, 3000, FALSE, 0);
+  configLED(PWM_MAX, 3000, FALSE, 0, 0);
 
   for(style = 0; style < BASIC_MAX; style++)
   {
@@ -697,7 +701,7 @@ bool handleSignColourChase()
   int saved = BLUE_MASK;
   int index;
 
-  configLED(PWM_MAX, 400, FALSE, 2);
+  configLED(PWM_MAX, 400, FALSE, 2, 0);
         
   basicConstantLoad(letterData, CHASE);
   for(index = 0; index < 30; index++)
@@ -713,7 +717,7 @@ bool handleSignRider()
 {
   int index;
   int repeat;
-  configLED(PWM_MAX, 600, TRUE, 6);
+  configLED(PWM_MAX, 600, TRUE, 6, 0);
 
   styleRedColor(letterData);
   letterData[0] = GREEN_MASK;
@@ -740,7 +744,7 @@ bool handleSignStack()
   int time;
   int colourData[LETTER_MAX];
 
-  configLED(PWM_MAX, 50, TRUE, 0);  
+  configLED(PWM_MAX, 50, TRUE, 0, RED_MASK);  
   basicAlternateColor(colourData, RED_MASK, GREEN_MASK);
   basicOff(letterData);
 
@@ -770,7 +774,7 @@ bool handleSignStack()
   if(wait(400))
     return(TRUE);
 
-  configLED(PWM_MAX, 50, TRUE, LETTER_MAX - 1);  
+  configLED(PWM_MAX, 50, TRUE, 0, GREEN_MASK);  
 
   if(wait(400))
     return(TRUE);
@@ -806,7 +810,7 @@ bool handleRandomChars()
   int count;
   int pos[LETTER_MAX];
 
-  configLED(PWM_MAX, 1000, FALSE, 0);
+  configLED(PWM_MAX, 1000, FALSE, 0, 0);
   basicOff(letterData);
   randomizeArray(pos, LETTER_MAX);
   
@@ -842,7 +846,7 @@ bool handleRandomChars()
 bool handleSolidAlternate()
 {
   int style;
-  configLED(PWM_MAX, 3500, FALSE, 0);
+  configLED(PWM_MAX, 3500, FALSE, 0, 0);
        
   for(style = 0; style < SOLID_MAX; style++)
   {
@@ -858,7 +862,7 @@ bool handleSignBreathe()
   int style;
   int loop;
 
-  configLED(PWM_MAX, 150, FALSE, 6);
+  configLED(PWM_MAX, 150, FALSE, 6, 0);
   basicOff(letterData);
 
   for(loop = 0; loop < BREATHE_MAX; loop++)
@@ -890,7 +894,7 @@ bool handleSignColourPuke()
   int loop;
   int colour = 0;
 
-  configLED(PWM_MAX, 50, FALSE, 6);
+  configLED(PWM_MAX, 50, FALSE, 6, 0);
 
   for(loop = 0; loop < 30; loop++)
   {
@@ -924,7 +928,7 @@ bool handleSignOverlap()
   int colour1;
   int colour2;
 
-  configLED(PWM_MAX, 150, FALSE, 0);
+  configLED(PWM_MAX, 150, FALSE, 0, 0);
   basicOff(letterData);
 
   colour1 = random(1, 7);
@@ -962,13 +966,16 @@ bool handleSignLetterChase()
 {
   int index;
 
-  configLED(PWM_MAX, 200, TRUE, 0);
+  configLED(PWM_MAX, 200, TRUE, LETTER_MAX, 0);
   basicOff(letterData);
 
   for(index = 0; index < (LET_CH_MAX * 6); index++)
   {
     rotateRight(letterData);
     letterData[0] = LETTER_CHASE_COLOUR[index % LET_CH_MAX];
+
+    if((letterData[0] == RED_MASK) || (letterData[0] == GREEN_MASK))
+      configLED(PWM_MAX, 200, TRUE, 0, letterData[0]);
 
     if(wait(100))
       return(TRUE);
@@ -990,17 +997,17 @@ bool handleSignLetterRoll()
   int index;
   int shiftBuffer = BLUE_MASK;
 
-  configLED(PWM_MAX, 100, FALSE, 6);
+  configLED(PWM_MAX, 100, FALSE, 6, 0);
   basicOff(letterData);
   if(wait(100))
     return(TRUE);
 
-  configLED(PWM_MAX, 700, FALSE, 6);
+  configLED(PWM_MAX, 700, FALSE, 6, 0);
   styleGreenColor(letterData);
   if(wait(700))
     return(TRUE);
 
-  configLED(PWM_MAX, 400, FALSE, 6);
+  configLED(PWM_MAX, 400, FALSE, 6, 0);
 
   for(index = 0; index < (LETTER_MAX + 2); index++)
   {
@@ -1092,25 +1099,25 @@ void loop()
 
 // Green Level
       case SIGN_TEST_RED:      // M
-        configLED(PWM_MAX, 0, TRUE, 0);
+        configLED(PWM_MAX, 0, TRUE, 0, 0);
         styleRedColor(letterData);
         wait(100);
         break;
 
       case SIGN_TEST_GREEN:    // E
-        configLED(PWM_MAX, 0, TRUE, 0);      
+        configLED(PWM_MAX, 0, TRUE, 0, 0);      
         styleGreenColor(letterData);
         wait(100);
         break;
 
       case SIGN_TEST_BLUE:     // R
-        configLED(PWM_MAX, 0, TRUE, 0);      
+        configLED(PWM_MAX, 0, TRUE, 0, 0);      
         styleBlueColor(letterData);
         wait(100);
         break;
 
       case SIGN_TEST_WHITE:    // R
-        configLED(PWM_MAX, 0, TRUE, 0);      
+        configLED(PWM_MAX, 0, TRUE, 0, 0);      
         styleWhiteColor(letterData);
         wait(100);
         break;
