@@ -93,9 +93,9 @@ const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 #define SIGN_COLOUR_PUKE  8
 #define SIGN_OVERLAP      9
 #define SIGN_LETTER_CHASE 10
-#define SIGN_NEW1         11
-#define SIGN_NEW2         12
-#define SIGN_NEW3         13
+#define SIGN_LETTER_ROLL  11
+#define SIGN_NEW1         12
+#define SIGN_NEW2         13
 
 // Green Level
 #define SIGN_TEST_RED     14   // Test of solid red
@@ -106,7 +106,7 @@ const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 #define SIGN_SELECT       99  // Select mode state
 
 #define SELECT_TIME   6    // x500ms
-#define PLAY_MEM      3    // Number of routines to avoid during randomize
+#define PLAY_MEM      5    // Number of routines to avoid during randomize
 
 #define PWM_MAX       33   // 33 x .3ms = 10ms pwm period
 
@@ -600,7 +600,7 @@ void (*styleFuncListSolid[SOLID_MAX])(int *) = { styleRedColor,
                                                  styleWhiteColor
                                                };
 
-#define RANDOMIZE_MAX 9
+#define RANDOMIZE_MAX 10
 bool (*styleFuncListRandom[RANDOMIZE_MAX])() = { handleRandomChars,
                                                  handleSignRider,
                                                  handleSignColourChase,
@@ -609,7 +609,8 @@ bool (*styleFuncListRandom[RANDOMIZE_MAX])() = { handleRandomChars,
                                                  handleSignStack,
                                                  handleSignColourPuke,
                                                  handleSignOverlap,
-                                                 handleSignLetterChase
+                                                 handleSignLetterChase,
+                                                 handleSignLetterRoll
                                                };
 
 void handleSelectMenu()
@@ -964,7 +965,7 @@ bool handleSignLetterChase()
   configLED(PWM_MAX, 200, TRUE, 0);
   basicOff(letterData);
 
-  for(index = 0; index < (LET_CH_MAX * 6); index ++)
+  for(index = 0; index < (LET_CH_MAX * 6); index++)
   {
     rotateRight(letterData);
     letterData[0] = LETTER_CHASE_COLOUR[index % LET_CH_MAX];
@@ -973,7 +974,7 @@ bool handleSignLetterChase()
       return(TRUE);
   }
 
-  for(index = 0; index < LETTER_MAX; index ++)
+  for(index = 0; index < LETTER_MAX; index++)
   {
     rotateRight(letterData);
     letterData[0] = 0;
@@ -981,6 +982,52 @@ bool handleSignLetterChase()
     if(wait(100))
       return(TRUE);
   }
+  return(FALSE);
+}
+
+bool handleSignLetterRoll()
+{
+  int index;
+  int shiftBuffer = BLUE_MASK;
+
+  configLED(PWM_MAX, 100, FALSE, 6);
+  basicOff(letterData);
+  if(wait(100))
+    return(TRUE);
+
+  configLED(PWM_MAX, 700, FALSE, 6);
+  styleGreenColor(letterData);
+  if(wait(700))
+    return(TRUE);
+
+  configLED(PWM_MAX, 400, FALSE, 6);
+
+  for(index = 0; index < (LETTER_MAX + 2); index++)
+  {
+    shiftRight(letterData, shiftBuffer);
+    shiftBuffer = RED_MASK;
+
+    if(wait(400))
+      return(TRUE);
+  }
+
+  if(wait(700))
+    return(TRUE);
+
+  shiftBuffer = BLUE_MASK;
+  for(index = 0; index < (LETTER_MAX + 2); index++)
+  {
+    shiftLeft(letterData, shiftBuffer);
+    shiftBuffer = GREEN_MASK;
+
+    if(wait(400))
+      return(TRUE);
+  }
+
+  basicOff(letterData);
+  if(wait(700))
+    return(TRUE);
+
   return(FALSE);
 }
 
@@ -1038,6 +1085,10 @@ void loop()
       case SIGN_LETTER_CHASE:  // T
         handleSignLetterChase();
         break;
+        
+      case SIGN_LETTER_ROLL:   // M
+        handleSignLetterRoll();
+        break;
 
 // Green Level
       case SIGN_TEST_RED:      // M
@@ -1066,7 +1117,6 @@ void loop()
 
       case SIGN_NEW1: 
       case SIGN_NEW2: 
-      case SIGN_NEW3: 
                        
       default:
         basicOff(letterData);
