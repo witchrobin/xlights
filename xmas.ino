@@ -94,8 +94,8 @@ const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 #define SIGN_OVERLAP      9
 #define SIGN_LETTER_CHASE 10
 #define SIGN_LETTER_ROLL  11
-#define SIGN_NEW1         12
-#define SIGN_NEW2         13
+#define SIGN_STATIC       12
+#define SIGN_NEW1         13
 
 // Green Level
 #define SIGN_TEST_RED     14   // Test of solid red
@@ -106,7 +106,7 @@ const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 #define SIGN_SELECT       99  // Select mode state
 
 #define SELECT_TIME   6    // x500ms
-#define PLAY_MEM      5    // Number of routines to avoid during randomize
+#define PLAY_MEM      6    // Number of routines to avoid during randomize
 
 #define PWM_MAX       33   // 33 x .3ms = 10ms pwm period
 
@@ -604,7 +604,7 @@ void (*styleFuncListSolid[SOLID_MAX])(int *) = { styleRedColor,
                                                  styleWhiteColor
                                                };
 
-#define RANDOMIZE_MAX 10
+#define RANDOMIZE_MAX 11
 bool (*styleFuncListRandom[RANDOMIZE_MAX])() = { handleRandomChars,
                                                  handleSignRider,
                                                  handleSignColourChase,
@@ -614,7 +614,8 @@ bool (*styleFuncListRandom[RANDOMIZE_MAX])() = { handleRandomChars,
                                                  handleSignColourPuke,
                                                  handleSignOverlap,
                                                  handleSignLetterChase,
-                                                 handleSignLetterRoll
+                                                 handleSignLetterRoll,
+                                                 handleSignStatic
                                                };
 
 void handleSelectMenu()
@@ -1038,6 +1039,25 @@ bool handleSignLetterRoll()
   return(FALSE);
 }
 
+bool handleSignStatic()
+{
+  int index;
+  int count;
+
+  configLED(PWM_MAX, 0, FALSE, 0, 0);
+
+  for(count = 0; count < 400; count++)
+  {
+    for(index = 0; index < LETTER_MAX; index++)
+    {
+      letterData[index] = random(0, 8);
+    }
+    if(wait(15))
+      return(TRUE);
+  }
+  return(FALSE);
+}
+
 void loop()
 {
   if(signActive)
@@ -1096,6 +1116,10 @@ void loop()
       case SIGN_LETTER_ROLL:   // M
         handleSignLetterRoll();
         break;
+      
+      case SIGN_STATIC:        // A
+        handleSignStatic();
+        break;       
 
 // Green Level
       case SIGN_TEST_RED:      // M
@@ -1123,7 +1147,6 @@ void loop()
         break;
 
       case SIGN_NEW1: 
-      case SIGN_NEW2: 
                        
       default:
         basicOff(letterData);
