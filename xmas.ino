@@ -1043,18 +1043,44 @@ bool handleSignStatic()
 {
   int index;
   int count;
+  int pos[LETTER_MAX];
+  int stop = 0;
 
   configLED(PWM_MAX, 0, FALSE, 0, 0);
+  randomizeArray(pos, LETTER_MAX);
 
-  for(count = 0; count < 400; count++)
+  for(count = 0; count < 450; count++)
   {
-    for(index = 0; index < LETTER_MAX; index++)
+    styleRedColor(letterData);
+
+    for(index = stop; index < LETTER_MAX; index++)
     {
-      letterData[index] = random(0, 8);
+      letterData[pos[index]] = random(0, 8);
     }
-    if(wait(15))
+
+    if((count > 100) && (stop < LETTER_MAX))
+    {
+      if(stop < 10)
+      {
+        if(!(count % 16))
+          stop++;
+      }
+      else if(stop < 13)
+      {
+        if(!(count % 40))
+          stop++;
+      }
+    }
+
+    if(wait(30))
       return(TRUE);
   }
+
+  styleRedColor(letterData);
+
+  if(wait(1000))
+    return(TRUE);
+
   return(FALSE);
 }
 
