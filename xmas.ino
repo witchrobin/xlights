@@ -1055,7 +1055,7 @@ bool handleSignStatic()
 
     for(index = stop; index < LETTER_MAX; index++)
     {
-      letterData[pos[index]] = random(0, 8);
+      letterData[pos[index]] = random(0, 7);
     }
 
     if((count > 100) && (stop < LETTER_MAX))
@@ -1072,7 +1072,7 @@ bool handleSignStatic()
       }
     }
 
-    if(wait(30))
+    if(wait(20))
       return(TRUE);
   }
 
