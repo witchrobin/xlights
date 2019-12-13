@@ -118,7 +118,7 @@ const int STAR_MAP[COLOUR_MAX] = {STB, STR, STG};
 #define BREATHE_MAX   4
 const int BREATHE_COLOR[BREATHE_MAX] = { 3, 6, 5, 7 };
 #define LET_CH_MAX    16
-const int LETTER_CHASE_COLOUR[LET_CH_MAX] = { 7, 0, 0, 0, 2, 0, 0, 0, 7, 0, 0, 0, 1, 0, 0, 0 };
+const int LETTER_CHASE_COLOUR[LET_CH_MAX] = { 7, 7, 0, 0, 2, 2, 0, 0, 7, 7, 0, 0, 1, 1, 0, 0 };
 
 // Scenes - Single states          M  E  R  R  Y  C  H  R  I  S  T  M  A  S
 const int CHASE[LETTER_MAX]    = { 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2 };
